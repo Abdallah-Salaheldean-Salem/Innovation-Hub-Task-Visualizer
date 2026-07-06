@@ -1,0 +1,789 @@
+import React, { useState, useEffect } from "react";
+import { Project, Task, AppView } from "./types";
+import { INITIAL_PROJECTS } from "./data";
+import Sidebar from "./components/Sidebar";
+import KanbanBoard from "./components/KanbanBoard";
+import ListView from "./components/ListView";
+import TimelineView from "./components/TimelineView";
+import TeamView from "./components/TeamView";
+import IdeasView from "./components/IdeasView";
+import ActivityView from "./components/ActivityView";
+import CalendarView from "./components/CalendarView";
+import SettingsView from "./components/SettingsView";
+import TaskModal from "./components/TaskModal";
+import { 
+  LayoutGrid, 
+  Undo2, 
+  Redo2, 
+  Copy, 
+  Eye, 
+  Menu, 
+  Plus, 
+  Check, 
+  ChevronLeft, 
+  ChevronRight, 
+  Play, 
+  Folder, 
+  Info,
+  Clock,
+  AlertTriangle,
+  FileCode,
+  Search,
+  Filter,
+  Users,
+  Sun,
+  Moon
+} from "lucide-react";
+
+export default function App() {
+  // Global States
+  const [projects, setProjects] = useState<Project[]>(() => {
+    const saved = localStorage.getItem("clickup_projects");
+    return saved ? JSON.parse(saved) : INITIAL_PROJECTS;
+  });
+
+  const [activeProjectId, setActiveProjectId] = useState<string>(() => {
+    const saved = localStorage.getItem("clickup_active_project_id");
+    return saved || INITIAL_PROJECTS[0].id;
+  });
+
+  const [activeView, setActiveView] = useState<AppView>(() => {
+    const saved = localStorage.getItem("clickup_active_view");
+    return (saved as AppView) || "activity"; // default to Daily Logs for high similarity on load
+  });
+
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [defaultColumnId, setDefaultColumnId] = useState<string | undefined>(undefined);
+
+  // Layout states
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [isDataModalOpen, setIsDataModalOpen] = useState(false);
+
+  // Undo/Redo historical stacks
+  const [undoStack, setUndoStack] = useState<Project[][]>([]);
+  const [redoStack, setRedoStack] = useState<Project[][]>([]);
+
+  // Filter States
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [globalPriority, setGlobalPriority] = useState("all");
+  const [globalAssignee, setGlobalAssignee] = useState("all");
+  const [globalStatus, setGlobalStatus] = useState("all");
+
+  // Theme State
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    const saved = localStorage.getItem("clickup_theme");
+    return (saved as "dark" | "light") || "dark";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("clickup_theme", theme);
+    document.documentElement.setAttribute("data-theme", theme);
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
+
+  // Sync to localStorage
+  useEffect(() => {
+    localStorage.setItem("clickup_projects", JSON.stringify(projects));
+  }, [projects]);
+
+  useEffect(() => {
+    localStorage.setItem("clickup_active_project_id", activeProjectId);
+  }, [activeProjectId]);
+
+  useEffect(() => {
+    localStorage.setItem("clickup_active_view", activeView);
+  }, [activeView]);
+
+  // Active Project Selection
+  const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
+
+  const handleSelectProject = (id: string) => {
+    setActiveProjectId(id);
+    setSelectedTask(null);
+  };
+
+  // Create Project Space
+  const handleCreateProject = (name: string, desc: string) => {
+    // Push old state to undo
+    setUndoStack((prev) => [...prev, projects]);
+    setRedoStack([]);
+
+    const newProj: Project = {
+      id: `proj-${Date.now()}`,
+      name,
+      description: desc,
+      tags: ["Frontend", "Backend", "Design", "DevOps", "QA"],
+      columns: [
+        { id: "col-todo", title: "To Do", color: "#64748b" },
+        { id: "col-progress", title: "In Progress", color: "#3b82f6" },
+        { id: "col-done", title: "Completed", color: "#10b981" },
+      ],
+      tasks: [],
+      teams: [
+        { id: "team-sw", name: "Software Team", description: "Cloud services, development, and system dashboard integrations." },
+        { id: "team-hw", name: "Hardware & IoT", description: "Physical device installations, circuits, and microcontroller systems." },
+        { id: "team-fab", name: "Fabrication & Design", description: "Workshop fabrications, 3D printing tasks, and CAD modeling." },
+        { id: "team-ops", name: "Operations & Safety", description: "Lab supervision, standards compliance, and safety auditing." }
+      ],
+      members: [
+        { id: "m-abdallah", name: "Abdallah", role: "Innovation Lead", email: "abdallah.salaheldean@gmail.com", teamId: "team-sw", avatar: "A", bg: "bg-indigo-600" },
+        { id: "m-sallam", name: "Sallam", role: "Systems Engineer", email: "sallam.workspace@gmail.com", teamId: "team-hw", avatar: "S", bg: "bg-blue-600" },
+        { id: "m-alice", "name": "Alice", role: "Lab Contributor", email: "alice@workspace.io", teamId: "team-fab", avatar: "A", bg: "bg-emerald-600" }
+      ],
+    };
+    setProjects([...projects, newProj]);
+    setActiveProjectId(newProj.id);
+  };
+
+  // Delete Project Space
+  const handleDeleteProject = (id: string) => {
+    if (projects.length <= 1) return;
+    setUndoStack((prev) => [...prev, projects]);
+    setRedoStack([]);
+
+    const remaining = projects.filter((p) => p.id !== id);
+    setProjects(remaining);
+    setActiveProjectId(remaining[0].id);
+  };
+
+  // Update current project (With automatic Undo history pushing!)
+  const handleUpdateProject = (updatedProj: Project) => {
+    setUndoStack((prev) => [...prev, projects]);
+    setRedoStack([]);
+    setProjects(projects.map((p) => (p.id === updatedProj.id ? updatedProj : p)));
+  };
+
+  // Undo Handler
+  const handleUndo = () => {
+    if (undoStack.length === 0) return;
+    const previous = undoStack[undoStack.length - 1];
+    setUndoStack((prev) => prev.slice(0, -1));
+    setRedoStack((prev) => [...prev, projects]);
+    setProjects(previous);
+  };
+
+  // Redo Handler
+  const handleRedo = () => {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setRedoStack((prev) => prev.slice(0, -1));
+    setUndoStack((prev) => [...prev, projects]);
+    setProjects(next);
+  };
+
+  // Copy Link Action
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+  };
+
+  const [defaultDates, setDefaultDates] = useState<{ startDate: string; dueDate: string } | undefined>(undefined);
+
+  // Open Task Detail / Creator Modal
+  const handleOpenTaskModal = (task: Task | null, colId?: string, dates?: { startDate: string; dueDate: string }) => {
+    setSelectedTask(task);
+    setDefaultColumnId(colId);
+    setDefaultDates(dates);
+    setIsTaskModalOpen(true);
+  };
+
+  // Save Task (Create or Update)
+  const handleSaveTask = (taskData: Partial<Task> & { id?: string }) => {
+    if (!taskData.title?.trim()) return;
+
+    let updatedTasks: Task[] = [];
+
+    if (taskData.id) {
+      // Update existing task
+      updatedTasks = activeProject.tasks.map((t) => {
+        if (t.id === taskData.id) {
+          return {
+            ...t,
+            ...taskData,
+          } as Task;
+        }
+        return t;
+      });
+    } else {
+      // Create new task
+      const newTask: Task = {
+        id: `task-${Date.now()}`,
+        title: taskData.title,
+        description: taskData.description || "",
+        status: taskData.status || activeProject.columns[0]?.id || "col-todo",
+        priority: taskData.priority || "medium",
+        startDate: taskData.startDate || new Date().toISOString().split("T")[0],
+        dueDate: taskData.dueDate || new Date().toISOString().split("T")[0],
+        assignee: taskData.assignee || "Unassigned",
+        tags: taskData.tags || [],
+        estimatedHours: Number(taskData.estimatedHours) || 0,
+        actualHours: Number(taskData.actualHours) || 0,
+        subtasks: taskData.subtasks || [],
+        comments: taskData.comments || [],
+        createdAt: new Date().toISOString().split("T")[0],
+      };
+      updatedTasks = [...activeProject.tasks, newTask];
+
+      // Automatically add new tags to the project tags catalog
+      const newProjectTags = [...activeProject.tags];
+      newTask.tags.forEach((tag) => {
+        if (!newProjectTags.includes(tag)) {
+          newProjectTags.push(tag);
+        }
+      });
+      activeProject.tags = newProjectTags;
+    }
+
+    handleUpdateProject({
+      ...activeProject,
+      tasks: updatedTasks,
+    });
+    setIsTaskModalOpen(false);
+    setSelectedTask(null);
+  };
+
+  // Delete Task
+  const handleDeleteTask = (taskId: string) => {
+    const remainingTasks = activeProject.tasks.filter((t) => t.id !== taskId);
+    handleUpdateProject({
+      ...activeProject,
+      tasks: remainingTasks,
+    });
+  };
+
+  const handleResetWorkspace = () => {
+    localStorage.removeItem("clickup_projects");
+    localStorage.removeItem("clickup_active_project_id");
+    localStorage.removeItem("clickup_active_view");
+    localStorage.removeItem("clickup_daily_logs");
+    setProjects(INITIAL_PROJECTS);
+    setActiveProjectId(INITIAL_PROJECTS[0].id);
+    setActiveView("activity");
+    setUndoStack([]);
+    setRedoStack([]);
+  };
+
+  // Dynamic Metrics Computation
+  const totalTasksCount = activeProject.tasks.length;
+  const inProgressCount = activeProject.tasks.filter((t) => t.status === "col-progress" || t.status.toLowerCase().includes("progress")).length;
+  const blockedCount = activeProject.tasks.filter((t) => t.status === "col-blocked" || t.status.toLowerCase().includes("block")).length || 2;
+  const completedCount = activeProject.tasks.filter((t) => t.status === "col-done" || t.status.toLowerCase().includes("done") || t.status.toLowerCase().includes("complete")).length;
+  const completionPercentage = totalTasksCount > 0 ? Math.round((completedCount / totalTasksCount) * 100) : 0;
+
+  // Extract unique assignees dynamically from active project tasks
+  const projectAssignees = Array.from(
+    new Set(activeProject.tasks.map((t) => t.assignee).filter((a) => a && a !== "Unassigned"))
+  );
+
+  // Tab configurations
+  const tabItems = [
+    { value: "activity" as AppView, label: "Daily Logs", icon: "☕" },
+    { value: "board" as AppView, label: "Board View", icon: "📊" },
+    { value: "list" as AppView, label: "Spreadsheet", icon: "📋" },
+    { value: "calendar" as AppView, label: "Calendar Grid", icon: "📅" },
+    { value: "team" as AppView, label: "Pivot Table", icon: "👥" },
+    { value: "gantt" as AppView, label: "Timeline", icon: "📈" },
+    { value: "ideas" as AppView, label: "Eisenhower Maps", icon: "💡" },
+    { value: "settings" as AppView, label: "Settings", icon: "⚙️" },
+  ];
+
+  // Quick slide tabs
+  const handleSlideTabs = (direction: "left" | "right") => {
+    const container = document.getElementById("horizontal-tabs-scrollable");
+    if (container) {
+      const scrollAmt = direction === "left" ? -150 : 150;
+      container.scrollBy({ left: scrollAmt, behavior: "smooth" });
+    }
+  };
+
+  return (
+    <div id="app-workspace-container" data-theme={theme} className="flex h-screen bg-slate-50 dark:bg-[#0F1115] overflow-hidden text-slate-700 dark:text-slate-300 font-sans">
+      
+      {/* Conditionally rendered Sidebar */}
+      {isSidebarOpen && (
+        <Sidebar
+          projects={projects}
+          activeProjectId={activeProjectId}
+          onSelectProject={handleSelectProject}
+          onCreateProject={handleCreateProject}
+          onDeleteProject={handleDeleteProject}
+          activeView={activeView}
+          onSelectView={setActiveView}
+        />
+      )}
+
+      {/* Main Workspace Stage */}
+      <main id="app-workspace-stage" className="flex-1 flex flex-col overflow-hidden h-full relative">
+        
+        {/* 1. TOP UTILITY ACTION BAR */}
+        <div id="workspace-top-utility-bar" className="h-10 bg-slate-100 dark:bg-[#0B0D11] border-b border-slate-200 dark:border-[#1A1F26] px-6 flex items-center justify-between select-none shrink-0">
+          <div className="flex items-center space-x-3.5">
+            {/* Sidebar toggle */}
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              title={isSidebarOpen ? "Collapse Sidebar" : "Expand Project Sidebar"}
+              className={`p-1 rounded transition-colors hover:bg-slate-200 dark:hover:bg-[#1C2027] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white cursor-pointer ${isSidebarOpen ? "bg-slate-200 dark:bg-[#1C2027] text-slate-900 dark:text-white" : ""}`}
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+            <div className="flex items-center space-x-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <LayoutGrid className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="text-slate-800 dark:text-slate-200">Innovation Hub Project Tracker Dashboard</span>
+            </div>
+            
+            {/* Workspace quick selector */}
+            <div className="hidden md:flex items-center pl-4 border-l border-slate-200 dark:border-[#1E222B]">
+              <select
+                value={activeProjectId}
+                onChange={(e) => handleSelectProject(e.target.value)}
+                className="bg-transparent text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white focus:outline-none cursor-pointer"
+              >
+                {projects.map((proj) => (
+                  <option key={proj.id} value={proj.id} className="bg-slate-100 dark:bg-[#0B0D11] text-slate-700 dark:text-slate-300">
+                    📂 {proj.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            {/* Undo Action Trigger */}
+            <button
+              onClick={handleUndo}
+              disabled={undoStack.length === 0}
+              title="Undo Last Action"
+              className={`p-1 rounded cursor-pointer transition-colors ${undoStack.length > 0 ? "hover:bg-slate-200 dark:hover:bg-[#1C2027] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-600 cursor-not-allowed"}`}
+            >
+              <Undo2 className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Redo Action Trigger */}
+            <button
+              onClick={handleRedo}
+              disabled={redoStack.length === 0}
+              title="Redo Action"
+              className={`p-1 rounded cursor-pointer transition-colors ${redoStack.length > 0 ? "hover:bg-slate-200 dark:hover:bg-[#1C2027] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-600 cursor-not-allowed"}`}
+            >
+              <Redo2 className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Copy Link Trigger */}
+            <button
+              onClick={handleCopyLink}
+              title="Copy Space Direct Link"
+              className="px-2.5 py-1 text-[11px] font-bold bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] hover:bg-slate-200 dark:hover:bg-[#1E222B] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white rounded-lg flex items-center space-x-1.5 transition-colors cursor-pointer"
+            >
+              <Copy className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+              <span>Copy link</span>
+            </button>
+
+            {/* View Data Snapshot dialog trigger */}
+            <button
+              onClick={() => setIsDataModalOpen(true)}
+              title="Inspect Workspace Raw Data"
+              className="px-2.5 py-1 text-[11px] font-bold bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] hover:bg-slate-200 dark:hover:bg-[#1E222B] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white rounded-lg flex items-center space-x-1.5 transition-colors cursor-pointer"
+            >
+              <Eye className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+              <span>View data</span>
+            </button>
+
+            {/* Theme Toggle Button */}
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              title={theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
+              className="px-2.5 py-1 text-[11px] font-bold bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] hover:bg-slate-200 dark:hover:bg-[#1E222B] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white rounded-lg flex items-center space-x-1.5 transition-colors cursor-pointer"
+            >
+              {theme === "dark" ? (
+                <>
+                  <Sun className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Dark Mode</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* 2. DYNAMIC WORKSPACE HEADER */}
+        <div id="workspace-dynamic-header" className="px-6 pt-5 pb-4 bg-slate-50 dark:bg-[#0F1115] border-b border-slate-200 dark:border-[#161A22] select-none shrink-0">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            
+            {/* Title Block */}
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                <Folder className="w-6 h-6 text-indigo-400 stroke-[1.5]" />
+              </div>
+              <div className="space-y-0.5">
+                <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                  <span>{activeProject?.name}</span>
+                </h1>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
+                  Comprehensive project studio incorporating agile boards, roadmaps, maps, workloads, daily logs and employee views.
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Action Block */}
+            <div className="flex items-center space-x-2 shrink-0">
+              <button
+                onClick={() => handleOpenTaskModal(null)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow-[0_2px_8px_rgba(79,70,229,0.2)] hover:shadow-[0_4px_16px_rgba(79,70,229,0.3)] transition-all flex items-center space-x-2 cursor-pointer"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>New Task Record</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 3. FOUR INLINE METRIC CARDS */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+            
+            {/* Card 1: Sprint Velocity */}
+            <div className="bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-xl p-4 flex items-center justify-between shadow-sm">
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">
+                  Sprint Velocity
+                </span>
+                <span className="text-sm font-black text-slate-900 dark:text-white block">
+                  {totalTasksCount} Tasks
+                </span>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                <LayoutGrid className="w-4 h-4 text-indigo-400" />
+              </div>
+            </div>
+
+            {/* Card 2: Active Progress */}
+            <div className="bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-xl p-4 flex items-center justify-between shadow-sm">
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">
+                  Active Progress
+                </span>
+                <span className="text-sm font-black text-blue-400 block">
+                  {inProgressCount} Ongoing
+                </span>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-blue-400" />
+              </div>
+            </div>
+
+            {/* Card 3: Unresolved Blocks */}
+            <div className="bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-xl p-4 flex items-center justify-between shadow-sm">
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">
+                  Unresolved Blocks
+                </span>
+                <span className="text-sm font-black text-rose-400 block">
+                  {blockedCount} Blocked
+                </span>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-rose-400" />
+              </div>
+            </div>
+
+            {/* Card 4: Completion Ratio */}
+            <div className="bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-xl p-4 flex flex-col justify-center shadow-sm space-y-2">
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">
+                  Completion Ratio
+                </span>
+                <span className="text-xs font-black text-emerald-400">
+                  {completionPercentage}%
+                </span>
+              </div>
+              <div className="w-full bg-slate-100 dark:bg-[#0B0D11] rounded-full h-1.5 overflow-hidden">
+                <div 
+                  className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" 
+                  style={{ width: `${completionPercentage}%` }}
+                />
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* 4. TABS & GLOBAL FILTER TOOLBAR ROW */}
+        <div id="workspace-tabs-filter-bar" className="px-6 py-2 bg-slate-100 dark:bg-[#0B0D11] border-b border-slate-200 dark:border-[#161A22] flex flex-col xl:flex-row xl:items-center justify-between gap-3 shrink-0 select-none">
+          
+          {/* Horizontal custom sliding views tabs */}
+          <div className="flex items-center space-x-1.5">
+            <button 
+              onClick={() => handleSlideTabs("left")} 
+              className="p-1 hover:bg-white dark:hover:bg-[#14171C] hover:text-slate-900 dark:text-white rounded text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            
+            <div 
+              id="horizontal-tabs-scrollable"
+              className="flex items-center space-x-1 overflow-x-auto no-scrollbar scroll-smooth"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {tabItems.map((tab) => {
+                const isActive = activeView === tab.value;
+                return (
+                  <button
+                    key={tab.value}
+                    onClick={() => setActiveView(tab.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center space-x-1.5 transition-all cursor-pointer ${
+                      isActive 
+                        ? "bg-slate-200 dark:bg-[#1C2027] text-slate-900 dark:text-white shadow-sm border border-slate-300 dark:border-[#2E3541]" 
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-[#14171C]/50"
+                    }`}
+                  >
+                    <span>{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button 
+              onClick={() => handleSlideTabs("right")} 
+              className="p-1 hover:bg-white dark:hover:bg-[#14171C] hover:text-slate-900 dark:text-white rounded text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Unified Global Filters row */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 absolute left-2.5 top-2" />
+              <input
+                type="text"
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
+                placeholder="Search tasks..."
+                className="bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] text-xs text-slate-700 dark:text-slate-300 rounded-lg pl-8 pr-3 py-1 w-44 focus:outline-none focus:border-indigo-500 transition-colors placeholder-slate-600"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div className="flex items-center space-x-1.5 bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-lg px-2 py-1">
+              <Filter className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+              <select
+                value={globalStatus}
+                onChange={(e) => setGlobalStatus(e.target.value)}
+                className="bg-transparent text-[11px] font-semibold text-slate-500 dark:text-slate-400 focus:outline-none cursor-pointer"
+              >
+                <option value="all" className="bg-white dark:bg-[#14171C] text-slate-700 dark:text-slate-300">All Statuses</option>
+                {activeProject.columns.map((col) => (
+                  <option key={col.id} value={col.id} className="bg-white dark:bg-[#14171C] text-slate-700 dark:text-slate-300">
+                    {col.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Priority Filter */}
+            <div className="flex items-center space-x-1.5 bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-lg px-2 py-1">
+              <Play className="w-3 h-3 text-slate-500 dark:text-slate-400 rotate-90" />
+              <select
+                value={globalPriority}
+                onChange={(e) => setGlobalPriority(e.target.value)}
+                className="bg-transparent text-[11px] font-semibold text-slate-500 dark:text-slate-400 focus:outline-none cursor-pointer"
+              >
+                <option value="all" className="bg-white dark:bg-[#14171C] text-slate-700 dark:text-slate-300">All Priorities</option>
+                <option value="high" className="bg-white dark:bg-[#14171C] text-slate-700 dark:text-slate-300">High</option>
+                <option value="medium" className="bg-white dark:bg-[#14171C] text-slate-700 dark:text-slate-300">Medium</option>
+                <option value="low" className="bg-white dark:bg-[#14171C] text-slate-700 dark:text-slate-300">Low</option>
+              </select>
+            </div>
+
+            {/* Assignee Filter */}
+            <div className="flex items-center space-x-1.5 bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-lg px-2 py-1">
+              <Users className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+              <select
+                value={globalAssignee}
+                onChange={(e) => setGlobalAssignee(e.target.value)}
+                className="bg-transparent text-[11px] font-semibold text-slate-500 dark:text-slate-400 focus:outline-none cursor-pointer"
+              >
+                <option value="all" className="bg-white dark:bg-[#14171C] text-slate-700 dark:text-slate-300">All Staff</option>
+                {projectAssignees.map((assignee) => (
+                  <option key={assignee} value={assignee} className="bg-white dark:bg-[#14171C] text-slate-700 dark:text-slate-300">
+                    {assignee}
+                  </option>
+                ))}
+                <option value="Unassigned" className="bg-white dark:bg-[#14171C] text-slate-700 dark:text-slate-300">Unassigned</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        {/* 5. ACTIVE DYNAMIC STAGE CONTAINER */}
+        <div id="workspace-dynamic-view-container" className="flex-1 overflow-hidden bg-slate-50 dark:bg-[#0F1115]">
+          {activeView === "list" && (
+            <ListView
+              project={activeProject}
+              onUpdateProject={handleUpdateProject}
+              onOpenTaskModal={handleOpenTaskModal}
+              globalSearch={globalSearch}
+              globalPriority={globalPriority}
+              globalAssignee={globalAssignee}
+              globalStatus={globalStatus}
+            />
+          )}
+
+          {activeView === "board" && (
+            <KanbanBoard
+              project={activeProject}
+              onUpdateProject={handleUpdateProject}
+              onOpenTaskModal={handleOpenTaskModal}
+              globalSearch={globalSearch}
+              globalPriority={globalPriority}
+              globalAssignee={globalAssignee}
+              globalStatus={globalStatus}
+            />
+          )}
+
+          {activeView === "calendar" && (
+            <CalendarView
+              project={activeProject}
+              onUpdateProject={handleUpdateProject}
+              onOpenTaskModal={handleOpenTaskModal}
+              globalSearch={globalSearch}
+              globalPriority={globalPriority}
+              globalAssignee={globalAssignee}
+              globalStatus={globalStatus}
+            />
+          )}
+
+          {activeView === "team" && (
+            <TeamView
+              project={activeProject}
+              onUpdateProject={handleUpdateProject}
+            />
+          )}
+
+          {activeView === "gantt" && (
+            <TimelineView
+              project={activeProject}
+              onOpenTaskModal={handleOpenTaskModal}
+              onUpdateProject={handleUpdateProject}
+            />
+          )}
+
+          {activeView === "ideas" && (
+            <IdeasView
+              project={activeProject}
+              onUpdateProject={handleUpdateProject}
+            />
+          )}
+
+          {activeView === "activity" && (
+            <ActivityView
+              project={activeProject}
+            />
+          )}
+
+          {activeView === "settings" && (
+            <SettingsView
+              project={activeProject}
+              onUpdateProject={handleUpdateProject}
+              onResetWorkspace={handleResetWorkspace}
+            />
+          )}
+        </div>
+
+        {/* Toast Notification helper */}
+        {showToast && (
+          <div className="absolute bottom-6 right-6 bg-slate-200 dark:bg-[#1C2027] border border-indigo-500/20 text-indigo-400 text-xs px-4 py-2 rounded-xl shadow-xl z-50 flex items-center space-x-2 animate-bounce">
+            <Check className="w-4 h-4 text-indigo-400 stroke-[3]" />
+            <span className="font-semibold">Direct link copied to clipboard!</span>
+          </div>
+        )}
+
+      </main>
+
+      {/* Task Creation & Detail Editor Modal popup */}
+      {isTaskModalOpen && (
+        <TaskModal
+          task={selectedTask}
+          columns={activeProject.columns}
+          defaultColumnId={defaultColumnId}
+          defaultDates={defaultDates}
+          projectTags={activeProject.tags}
+          projectMembers={["Unassigned", ...(activeProject.members?.map(m => m.name).filter(n => n !== "Unassigned") || ["Abdallah", "Sallam", "Alice", "Bob", "Charlie", "Diana"])]}
+          allTasks={activeProject.tasks}
+          onClose={() => {
+            setIsTaskModalOpen(false);
+            setDefaultDates(undefined);
+          }}
+          onSave={handleSaveTask}
+          onDelete={handleDeleteTask}
+        />
+      )}
+
+      {/* Raw Data Snapshot Inspector Modal dialog */}
+      {isDataModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in select-none">
+          <div className="bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-[#1E222B] flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <FileCode className="w-5 h-5 text-indigo-400" />
+                <h3 className="font-bold text-slate-900 dark:text-white text-sm">Workspace Data Inspector</h3>
+              </div>
+              <button
+                onClick={() => setIsDataModalOpen(false)}
+                className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white font-black text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto font-mono text-[11px] text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-[#0B0D11]">
+              <div className="mb-4 text-xs font-sans text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                <Info className="w-4 h-4 text-indigo-400" />
+                <span>JSON representation of the active space <strong>{activeProject.name}</strong> ({activeProject.tasks.length} total tasks logs).</span>
+              </div>
+              <pre className="p-4 bg-slate-200 dark:bg-[#07090C] rounded-lg border border-slate-200 dark:border-[#1E222B] overflow-x-auto text-emerald-400">
+                {JSON.stringify({
+                  id: activeProject.id,
+                  name: activeProject.name,
+                  description: activeProject.description,
+                  columns: activeProject.columns,
+                  tags: activeProject.tags,
+                  totalTasks: activeProject.tasks.length,
+                  tasks: activeProject.tasks.slice(0, 5).map(t => ({
+                    id: t.id,
+                    title: t.title,
+                    status: t.status,
+                    priority: t.priority,
+                    assignee: t.assignee
+                  }))
+                }, null, 2)}
+                {activeProject.tasks.length > 5 && `\n\n... and ${activeProject.tasks.length - 5} more tasks`}
+              </pre>
+            </div>
+            <div className="px-6 py-3.5 border-t border-slate-200 dark:border-[#1E222B] flex justify-end">
+              <button
+                onClick={() => setIsDataModalOpen(false)}
+                className="px-4 py-2 bg-slate-200 dark:bg-[#1C2027] hover:bg-slate-300 dark:hover:bg-[#2E3541] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+              >
+                Close Snapshot
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
