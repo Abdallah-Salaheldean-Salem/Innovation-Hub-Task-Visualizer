@@ -26,9 +26,7 @@ export default function SettingsView({ project, onUpdateProject, onResetWorkspac
   };
 
   const handleResetClick = () => {
-    if (confirm("Are you sure you want to reset the workspace? This will restore the 28 default tasks, 4 columns, and ideas backlog back to the spreadsheet baseline values. Any unsaved edits will be discarded.")) {
-      onResetWorkspace();
-    }
+    onResetWorkspace();
   };
 
   return (

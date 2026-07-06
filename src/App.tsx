@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Project, Task, AppView } from "./types";
 import { INITIAL_PROJECTS } from "./data";
+import { fetchProjects, saveProjectsBulk } from "./lib/supabase-sync";
 import Sidebar from "./components/Sidebar";
 import KanbanBoard from "./components/KanbanBoard";
 import ListView from "./components/ListView";
@@ -37,6 +38,15 @@ import {
 
 export default function App() {
   // Global States
+  // Fetch from Supabase on mount (if configured)
+  useEffect(() => {
+    fetchProjects().then((data) => {
+      if (data && data.length > 0) {
+        setProjects(data);
+      }
+    });
+  }, []);
+
   const [projects, setProjects] = useState<Project[]>(() => {
     const saved = localStorage.getItem("clickup_projects");
     return saved ? JSON.parse(saved) : INITIAL_PROJECTS;
@@ -87,9 +97,10 @@ export default function App() {
     }
   }, [theme]);
 
-  // Sync to localStorage
+  // Sync to localStorage and Supabase
   useEffect(() => {
     localStorage.setItem("clickup_projects", JSON.stringify(projects));
+    saveProjectsBulk(projects).catch(console.error);
   }, [projects]);
 
   useEffect(() => {
@@ -288,9 +299,9 @@ export default function App() {
     { value: "board" as AppView, label: "Board View", icon: "📊" },
     { value: "list" as AppView, label: "Spreadsheet", icon: "📋" },
     { value: "calendar" as AppView, label: "Calendar Grid", icon: "📅" },
-    { value: "team" as AppView, label: "Pivot Table", icon: "👥" },
+    { value: "team" as AppView, label: "Team View", icon: "👥" },
     { value: "gantt" as AppView, label: "Timeline", icon: "📈" },
-    { value: "ideas" as AppView, label: "Eisenhower Maps", icon: "💡" },
+    { value: "ideas" as AppView, label: "Ideas & Priorities", icon: "💡" },
     { value: "settings" as AppView, label: "Settings", icon: "⚙️" },
   ];
 

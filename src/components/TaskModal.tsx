@@ -660,10 +660,8 @@ export default function TaskModal({
                 id="task-delete-btn-action"
                 type="button"
                 onClick={() => {
-                  if (confirm("Are you sure you want to delete this task?")) {
-                    onDelete(task!.id);
-                    onClose();
-                  }
+                  onDelete(task!.id);
+                  onClose();
                 }}
                 className="px-4 py-2 bg-rose-50 border border-rose-100 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors"
               >

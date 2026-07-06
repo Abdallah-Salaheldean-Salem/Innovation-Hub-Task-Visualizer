@@ -158,6 +158,12 @@ export default function KanbanBoard({
     onUpdateProject({ ...project, tasks: updatedTasks });
   };
 
+  const handleDeleteTask = (e: React.MouseEvent, taskId: string) => {
+    e.stopPropagation();
+    const updatedTasks = project.tasks.filter((t) => t.id !== taskId);
+    onUpdateProject({ ...project, tasks: updatedTasks });
+  };
+
   // Add Column
   const handleAddColumn = (e: React.FormEvent) => {
     e.preventDefault();
@@ -723,14 +729,23 @@ export default function KanbanBoard({
                     <div
                       key={task.id}
                       onClick={() => onOpenTaskModal(task)}
-                      className="bg-white dark:bg-[#14171C] border border-rose-500/20 hover:border-rose-500/40 rounded-lg p-3 flex flex-col justify-between cursor-pointer hover:bg-rose-500/5 transition-all text-left"
+                      className="group bg-white dark:bg-[#14171C] border border-rose-500/20 hover:border-rose-500/40 rounded-lg p-3 flex flex-col justify-between cursor-pointer hover:bg-rose-500/5 transition-all text-left"
                     >
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-[10px]">
                           <span className="font-mono text-slate-500 dark:text-slate-400 font-semibold">{task.id}</span>
-                          <span className="bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase">
-                            {task.priority}
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <span className="bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase">
+                              {task.priority}
+                            </span>
+                            <button
+                              onClick={(e) => handleDeleteTask(e, task.id)}
+                              className="text-slate-400 hover:text-rose-500 transition-colors bg-white dark:bg-[#14171C] border border-slate-200 dark:border-slate-800 rounded p-1 shadow-sm"
+                              title="Delete task"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                         <h5 className="font-bold text-xs text-slate-800 dark:text-slate-200 line-clamp-1">{task.title}</h5>
                         {task.description && (
@@ -836,6 +851,13 @@ export default function KanbanBoard({
                               <span className="text-[8px] font-extrabold px-1 text-slate-500 dark:text-slate-400 uppercase">
                                 {task.priority}
                               </span>
+                              <button
+                                onClick={(e) => handleDeleteTask(e, task.id)}
+                                className="text-slate-400 hover:text-rose-500 transition-colors ml-1 bg-white dark:bg-[#14171C] border border-slate-200 dark:border-slate-800 rounded p-1 shadow-sm"
+                                title="Delete task"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           </div>
 
@@ -1049,20 +1071,29 @@ export default function KanbanBoard({
                             <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 dark:text-slate-500 font-extrabold tracking-wide">
                               {task.id.toUpperCase()}
                             </span>
-                            {(() => {
-                              const p = task.priority.toLowerCase();
-                              let badgeColors = "bg-slate-100 text-slate-500 dark:text-slate-600 border border-slate-200/50 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700/60";
-                              if (p === "critical" || p === "high") {
-                                badgeColors = "bg-rose-50 text-rose-600 border border-[#fecdd3]/40 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-500/20";
-                              } else if (p === "medium") {
-                                badgeColors = "bg-indigo-50 text-indigo-600 border border-[#c7d2fe]/40 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-500/20";
-                              }
-                              return (
-                                <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider ${badgeColors}`}>
-                                  {task.priority}
-                                </span>
-                              );
-                            })()}
+                            <div className="flex items-center space-x-2">
+                              {(() => {
+                                const p = task.priority.toLowerCase();
+                                let badgeColors = "bg-slate-100 text-slate-500 dark:text-slate-600 border border-slate-200/50 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700/60";
+                                if (p === "critical" || p === "high") {
+                                  badgeColors = "bg-rose-50 text-rose-600 border border-[#fecdd3]/40 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-500/20";
+                                } else if (p === "medium") {
+                                  badgeColors = "bg-indigo-50 text-indigo-600 border border-[#c7d2fe]/40 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-500/20";
+                                }
+                                return (
+                                  <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider ${badgeColors}`}>
+                                    {task.priority}
+                                  </span>
+                                );
+                              })()}
+                              <button
+                                onClick={(e) => handleDeleteTask(e, task.id)}
+                                className="text-slate-400 hover:text-rose-500 transition-colors ml-1 bg-white dark:bg-[#14171C] border border-slate-200 dark:border-slate-800 rounded p-1 shadow-sm"
+                                title="Delete task"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
 
                           {/* Title */}
@@ -1114,38 +1145,6 @@ export default function KanbanBoard({
                               <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                               <span>{task.estimatedHours || 4}h</span>
                             </div>
-                          </div>
-
-                          {/* Quick Shift buttons for small/iframe screens */}
-                          <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 flex items-center space-x-1 bg-slate-50 dark:bg-[#0F1115] p-1 border border-slate-200 dark:border-slate-800 rounded-md shadow-sm transition-opacity">
-                            {index > 0 && (
-                              <button
-                                id={`quick-shift-left-${task.id}`}
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleMoveTask(task.id, project.columns[index - 1].id);
-                                }}
-                                className="p-0.5 hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 cursor-pointer"
-                                title={`Move to ${project.columns[index - 1].title}`}
-                              >
-                                <ChevronLeft className="w-3 h-3" />
-                              </button>
-                            )}
-                            {index < project.columns.length - 1 && (
-                              <button
-                                id={`quick-shift-right-${task.id}`}
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleMoveTask(task.id, project.columns[index + 1].id);
-                                }}
-                                className="p-0.5 hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 cursor-pointer"
-                                title={`Move to ${project.columns[index + 1].title}`}
-                              >
-                                <ChevronRight className="w-3 h-3" />
-                              </button>
-                            )}
                           </div>
                         </div>
                       );

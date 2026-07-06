@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+const fs = require('fs');
+
+const content = `import React, { useState } from "react";
 import { Project, TeamMember, Team } from "../types";
 import { Users, UserPlus, Database, Trash2, Zap } from "lucide-react";
 
@@ -26,7 +28,7 @@ export default function TeamView({ project, onUpdateProject }: TeamViewProps) {
     e.preventDefault();
     if (!newTeamName.trim()) return;
     const newTeam: Team = {
-      id: `team-${Date.now()}`,
+      id: \`team-\${Date.now()}\`,
       name: newTeamName.trim(),
       description: newTeamDesc.trim()
     };
@@ -61,10 +63,10 @@ export default function TeamView({ project, onUpdateProject }: TeamViewProps) {
     const randomBg = bgs[Math.floor(Math.random() * bgs.length)];
     const initials = newMemberName.trim().split(" ").map(w => w[0]).join("").substring(0, 2).toUpperCase();
     const newMember: TeamMember = {
-      id: `member-${Date.now()}`,
+      id: \`member-\${Date.now()}\`,
       name: newMemberName.trim(),
       role: newMemberRole.trim() || "Lab Contributor",
-      email: newMemberEmail.trim() || `${newMemberName.trim().toLowerCase().replace(/\s+/g, "")}@workspace.io`,
+      email: newMemberEmail.trim() || \`\${newMemberName.trim().toLowerCase().replace(/\\s+/g, "")}@workspace.io\`,
       teamId: newMemberTeamId || undefined,
       avatar: initials || "U",
       bg: randomBg
@@ -139,7 +141,7 @@ export default function TeamView({ project, onUpdateProject }: TeamViewProps) {
       const teamMatch = teams.find(t => t.id === match.teamId);
       return {
         role: match.role || "Lab Contributor",
-        email: match.email || `${name.toLowerCase()}@workspace.io`,
+        email: match.email || \`\${name.toLowerCase()}@workspace.io\`,
         avatar: match.avatar || name[0] || "U",
         bg: match.bg || "bg-indigo-600",
         teamName: teamMatch ? teamMatch.name : "Unassigned Team"
@@ -148,7 +150,7 @@ export default function TeamView({ project, onUpdateProject }: TeamViewProps) {
     if (name === "Unassigned") {
       return { role: "General Backlog Pool", email: "-", avatar: "👤", bg: "bg-slate-700", teamName: "Backlog" };
     }
-    return { role: "External Contributor", email: `${name.toLowerCase()}@workspace.io`, avatar: name[0] || "U", bg: "bg-slate-200 dark:bg-slate-800", teamName: "External" };
+    return { role: "External Contributor", email: \`\${name.toLowerCase()}@workspace.io\`, avatar: name[0] || "U", bg: "bg-slate-200 dark:bg-slate-800", teamName: "External" };
   };
 
   return (
@@ -206,7 +208,7 @@ export default function TeamView({ project, onUpdateProject }: TeamViewProps) {
                       return (
                         <tr key={row.assignee} className="hover:bg-slate-50 dark:hover:bg-[#1C1F26]/30 transition-colors">
                           <td className="py-3 px-3 flex items-center space-x-3">
-                            <div className={`w-8 h-8 rounded-full ${details.bg} flex items-center justify-center text-white font-bold shadow-sm shrink-0`}>
+                            <div className={\`w-8 h-8 rounded-full \${details.bg} flex items-center justify-center text-white font-bold shadow-sm shrink-0\`}>
                               {details.avatar}
                             </div>
                             <div className="flex flex-col">
@@ -225,7 +227,7 @@ export default function TeamView({ project, onUpdateProject }: TeamViewProps) {
                           <td className="py-3 px-3">
                             <div className="flex items-center space-x-3">
                               <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                                <div className="bg-orange-500 h-full rounded-full" style={{ width: `${percentage}%` }}></div>
+                                <div className="bg-orange-500 h-full rounded-full" style={{ width: \`\${percentage}%\` }}></div>
                               </div>
                               <span className="font-mono text-xs font-semibold text-slate-600 dark:text-slate-400 w-8">{percentage}%</span>
                             </div>
@@ -337,7 +339,7 @@ export default function TeamView({ project, onUpdateProject }: TeamViewProps) {
             <div className="bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-[#1E222B] rounded-lg p-4">
               <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Active Team Members</h4>
               <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-2 font-mono">
-                {workloadData.filter(m => m.assignee !== "Unassigned").length} Staff
+                {members.length} Staff
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
                 Currently driving workspace activities. Click <strong>Add Team Member</strong> at the top right to enlist new contractors.
@@ -358,28 +360,15 @@ export default function TeamView({ project, onUpdateProject }: TeamViewProps) {
           {workloadData.map(member => {
             const details = getContactDetails(member.assignee);
             return (
-              <div key={member.assignee} className="bg-white dark:bg-[#17191E] border border-slate-200 dark:border-[#1E222B] rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col space-y-4 group">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3">
-                    <div className={`w-10 h-10 rounded-full ${details.bg} flex items-center justify-center text-white font-bold shadow-sm shrink-0 text-lg`}>
-                      {details.avatar}
-                    </div>
-                    <div className="flex flex-col">
-                      <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-snug">{member.assignee}</h4>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{details.role}</p>
-                    </div>
+              <div key={member.assignee} className="bg-white dark:bg-[#17191E] border border-slate-200 dark:border-[#1E222B] rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className={\`w-10 h-10 rounded-full \${details.bg} flex items-center justify-center text-white font-bold shadow-sm shrink-0 text-lg\`}>
+                    {details.avatar}
                   </div>
-                  {member.assignee !== "Unassigned" && (
-                    <button
-                      onClick={() => {
-                        handleRemoveMember(member.assignee);
-                      }}
-                      className="text-slate-400 hover:text-rose-500 transition-colors bg-white dark:bg-[#14171C] border border-slate-200 dark:border-slate-800 rounded p-1.5 shadow-sm opacity-0 group-hover:opacity-100"
-                      title="Remove member"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                  <div className="flex flex-col">
+                    <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-snug">{member.assignee}</h4>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{details.role}</p>
+                  </div>
                 </div>
                 
                 <div className="flex items-center space-x-1.5 pt-0.5">
@@ -514,3 +503,6 @@ export default function TeamView({ project, onUpdateProject }: TeamViewProps) {
     </div>
   );
 }
+`
+
+fs.writeFileSync('src/components/TeamView.tsx', content);

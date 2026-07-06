@@ -91,7 +91,6 @@ export default function ActivityView({ project }: ActivityViewProps) {
   const handleLogSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!completedText.trim()) {
-      alert("Please specify what you completed.");
       return;
     }
 
@@ -165,11 +164,9 @@ export default function ActivityView({ project }: ActivityViewProps) {
 
   // Delete log handler
   const handleDeleteLog = (id: string) => {
-    if (confirm("Are you sure you want to delete this log entry?")) {
-      setLogs(logs.filter((log) => log.id !== id));
-      if (editingLogId === id) {
-        setEditingLogId(null);
-      }
+    setLogs(logs.filter((log) => log.id !== id));
+    if (editingLogId === id) {
+      setEditingLogId(null);
     }
   };
 

@@ -70,11 +70,10 @@ export default function Sidebar({
       {/* Workspace Header */}
       <div id="sidebar-header" className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-3">
         <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-slate-900 dark:text-white shadow-md">
-          CU
+          IH
         </div>
         <div>
-          <h1 className="font-semibold text-slate-900 dark:text-white tracking-wide text-sm">Productivity Workspace</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">ClickUp Workspace</p>
+          <h1 className="font-semibold text-slate-900 dark:text-white tracking-wide text-sm line-clamp-1" title="Innovation Hub Visualizer Kit">Innovation Hub Visualizer Kit</h1>
         </div>
       </div>
 
