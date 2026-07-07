@@ -55,7 +55,7 @@ export default function ListView({
   return (
     <div className="flex flex-col h-full bg-white dark:bg-[#0F1115] overflow-y-auto">
       {/* ClickUp Style Spreadsheet / List View */}
-      <div className="p-6 max-w-[1400px] w-full mx-auto">
+      <div className="p-3 sm:p-6 max-w-[1400px] w-full mx-auto">
         {project.columns.map((col) => {
           const colTasks = filteredTasks.filter(t => t.status === col.id);
           if (colTasks.length === 0) return null;

@@ -19,7 +19,7 @@ These are the immediate, actionable tasks scoped for the upcoming development cy
 - [x] Implement local-first `localStorage` caching engine
 - [ ] Stabilize Supabase background sync engine (handle network drops gracefully)
 - [ ] Connect Gemini AI API for one-click weekly project status reports
-- [ ] Refine mobile responsiveness for the Kanban and Timeline views
+- [x] Refine mobile responsiveness for the Kanban and Timeline views
 
 **Q4 2026 (v1.5.0 - Team & Analytics)**
 - [ ] Implement advanced global search and tag-based filtering

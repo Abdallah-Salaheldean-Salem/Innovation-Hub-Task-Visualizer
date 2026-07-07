@@ -914,7 +914,7 @@ export default function KanbanBoard({
         </div>
       ) : (
         /* Kanban Stages Scrollbox */
-        <div id="kanban-board-stages" className="flex-1 overflow-x-auto p-4 flex items-start gap-4 select-none bg-slate-50 dark:bg-[#0F1115]">
+        <div id="kanban-board-stages" className="flex-1 overflow-x-auto p-4 flex items-start gap-4 select-none bg-slate-50 dark:bg-[#0F1115] snap-x">
           {project.columns.map((col, index) => {
             const colTasks = filteredTasks.filter((task) => task.status === col.id);
             const isMenuOpen = activeMenuColumn === col.id;
@@ -926,7 +926,7 @@ export default function KanbanBoard({
                 id={`kanban-column-${col.id}`}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, col.id)}
-                className="w-80 flex-shrink-0 bg-white dark:bg-[#17191E] rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-full"
+                className="w-[85vw] max-w-[320px] sm:w-80 flex-shrink-0 snap-center bg-white dark:bg-[#17191E] rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-full"
               >
                 {/* Stage Header */}
                 <div

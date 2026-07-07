@@ -733,23 +733,23 @@ export default function TimelineView({ project, onOpenTaskModal, onUpdateProject
         {/* Left Side dynamic task spreadsheet */}
         <div
           id="gantt-sidebar-pane"
-          className={`w-48 md:w-64 lg:w-[480px] shrink-0 border-r flex flex-col overflow-auto select-none divide-y ${
+          className={`w-[60vw] md:w-[320px] lg:w-[480px] shrink-0 border-r flex flex-col overflow-x-auto overflow-y-auto select-none divide-y ${
             "bg-white dark:bg-[#101216] border-slate-200 dark:border-slate-800 divide-slate-800/40"
           }`}
         >
           {/* Table Spreadsheet Headers */}
           <div
-            className={`h-11 flex items-center text-[10px] font-extrabold uppercase tracking-wider z-10 sticky top-0 border-b ${
+            className={`h-11 flex items-center text-[10px] font-extrabold uppercase tracking-wider z-10 sticky top-0 border-b min-w-max ${
               "bg-white dark:bg-[#14171C] text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800"
             }`}
           >
-            <div className="w-56 px-3 flex items-center space-x-1 shrink-0">
+            <div className="w-[60vw] md:w-56 px-3 flex items-center space-x-1 shrink-0">
               <Eye className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
               <span>Task Name</span>
             </div>
-            <div className="w-28 px-2 text-center border-l border-slate-300/20 shrink-0">Assigned</div>
-            <div className="w-28 px-2 text-center border-l border-slate-300/20 shrink-0">Status</div>
-            <div className="w-12 px-1 text-center border-l border-slate-300/20 shrink-0 font-black">+</div>
+            <div className="w-28 px-2 text-center border-l border-slate-300/20 shrink-0 hidden md:block">Assigned</div>
+            <div className="w-28 px-2 text-center border-l border-slate-300/20 shrink-0 hidden lg:block">Status</div>
+            <div className="w-12 px-1 text-center border-l border-slate-300/20 shrink-0 font-black hidden md:block">+</div>
           </div>
 
           {/* Combined Flat Row List on the Left Side */}
@@ -809,7 +809,7 @@ export default function TimelineView({ project, onOpenTaskModal, onUpdateProject
                 } ${isTaskCritical ? "border-l-2 border-rose-500" : ""}`}
               >
                 {/* Name cell with hierarchy identifier */}
-                <div className="w-56 px-3 py-2 flex items-center space-x-2 min-w-0 shrink-0">
+                <div className="w-[60vw] md:w-56 px-3 py-2 flex items-center space-x-2 min-w-0 shrink-0">
                   <span className="text-[9px] text-slate-500 dark:text-slate-400/80 font-mono font-semibold shrink-0 min-w-[20px]">
                     {row.indexStr}
                   </span>
@@ -830,7 +830,7 @@ export default function TimelineView({ project, onOpenTaskModal, onUpdateProject
                 </div>
 
                 {/* Assigned column (round avatars directly like the image) */}
-                <div className="w-28 px-2 py-2 border-l border-slate-300/10 flex items-center space-x-1.5 justify-start shrink-0">
+                <div className="w-28 px-2 py-2 border-l border-slate-300/10 hidden md:flex items-center space-x-1.5 justify-start shrink-0">
                   {task.assignee && task.assignee !== "Unassigned" ? (
                     <div className="flex items-center space-x-1.5">
                       <div className="w-5.5 h-5.5 rounded-full bg-indigo-500 text-white font-black flex items-center justify-center text-[9px] shadow-xs uppercase">
@@ -846,7 +846,7 @@ export default function TimelineView({ project, onOpenTaskModal, onUpdateProject
                 </div>
 
                 {/* Status column (colored bullets exactly like the image) */}
-                <div className="w-28 px-2 py-2 border-l border-slate-300/10 flex items-center space-x-1.5 justify-start shrink-0">
+                <div className="w-28 px-2 py-2 border-l border-slate-300/10 hidden lg:flex items-center space-x-1.5 justify-start shrink-0">
                   <span
                     className="w-2 h-2 rounded-full shrink-0"
                     style={{ backgroundColor: column?.color || "#cbd5e1" }}
@@ -859,7 +859,7 @@ export default function TimelineView({ project, onOpenTaskModal, onUpdateProject
                 {/* Plus button cell */}
                 <button
                   onClick={() => onOpenTaskModal(task)}
-                  className={`w-12 px-1 border-l border-slate-300/10 flex items-center justify-center hover:text-indigo-500 cursor-pointer text-slate-500 dark:text-slate-400`}
+                  className={`w-12 px-1 border-l border-slate-300/10 hidden md:flex items-center justify-center hover:text-indigo-500 cursor-pointer text-slate-500 dark:text-slate-400`}
                 >
                   <MoreVertical className="w-3.5 h-3.5" />
                 </button>
