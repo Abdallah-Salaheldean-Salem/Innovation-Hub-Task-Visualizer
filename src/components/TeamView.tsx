@@ -142,7 +142,7 @@ export default function TeamView({ project, onUpdateProject }: TeamViewProps) {
         email: match.email || `${name.toLowerCase()}@workspace.io`,
         avatar: match.avatar || name[0] || "U",
         bg: match.bg || "bg-indigo-600",
-        teamName: teamMatch ? teamMatch.name : "Unassigned Team"
+        teamName: teamMatch ? teamMatch.name : "Unassigned"
       };
     }
     if (name === "Unassigned") {
@@ -486,7 +486,7 @@ export default function TeamView({ project, onUpdateProject }: TeamViewProps) {
                   onChange={(e) => setNewMemberTeamId(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-slate-700 dark:text-slate-300 focus:outline-none focus:border-indigo-500 text-xs font-semibold cursor-pointer"
                 >
-                  <option value="">No Specific Team (General contributor)</option>
+                  <option value="">Unassigned</option>
                   {teams.map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}

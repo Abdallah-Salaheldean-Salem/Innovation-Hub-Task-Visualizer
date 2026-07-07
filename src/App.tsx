@@ -48,12 +48,12 @@ export default function App() {
   }, []);
 
   const [projects, setProjects] = useState<Project[]>(() => {
-    const saved = localStorage.getItem("clickup_projects_v3");
+    const saved = localStorage.getItem("clickup_projects_v5");
     return saved ? JSON.parse(saved) : INITIAL_PROJECTS;
   });
 
   const [activeProjectId, setActiveProjectId] = useState<string>(() => {
-    const saved = localStorage.getItem("clickup_active_project_id_v3");
+    const saved = localStorage.getItem("clickup_active_project_id_v5");
     return saved || INITIAL_PROJECTS[0].id;
   });
 
@@ -99,12 +99,12 @@ export default function App() {
 
   // Sync to localStorage and Supabase
   useEffect(() => {
-    localStorage.setItem("clickup_projects_v3", JSON.stringify(projects));
+    localStorage.setItem("clickup_projects_v5", JSON.stringify(projects));
     saveProjectsBulk(projects).catch(console.error);
   }, [projects]);
 
   useEffect(() => {
-    localStorage.setItem("clickup_active_project_id_v3", activeProjectId);
+    localStorage.setItem("clickup_active_project_id_v5", activeProjectId);
   }, [activeProjectId]);
 
   useEffect(() => {
@@ -270,8 +270,8 @@ export default function App() {
   };
 
   const handleResetWorkspace = () => {
-    localStorage.removeItem("clickup_projects_v3");
-    localStorage.removeItem("clickup_active_project_id_v3");
+    localStorage.removeItem("clickup_projects_v5");
+    localStorage.removeItem("clickup_active_project_id_v5");
     localStorage.removeItem("clickup_active_view");
     localStorage.removeItem("clickup_daily_logs");
     setProjects(INITIAL_PROJECTS);

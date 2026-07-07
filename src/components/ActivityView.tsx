@@ -70,9 +70,10 @@ export default function ActivityView({ project, onUpdateProject }: ActivityViewP
   const [targetDate, setTargetDate] = useState("2026-06-19");
   const [linkedTaskId, setLinkedTaskId] = useState("");
   const [completedText, setCompletedText] = useState("");
-  const teamList = project.members && project.members.length > 0
-    ? project.members.map(m => m.name)
-    : ["Unassigned"];
+  const teamList = Array.from(new Set([
+    ...(project.members && project.members.length > 0 ? project.members.map(m => m.name) : []),
+    "Unassigned"
+  ]));
 
   const [logStatus, setLogStatus] = useState<DailyLog["status"]>(project.columns?.[0]?.id || "Completed");
   const [whoCompleted, setWhoCompleted] = useState(teamList[0]);
