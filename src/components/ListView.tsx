@@ -93,8 +93,8 @@ export default function ListView({
 
               {/* Group Tasks Table (Spreadsheet style) */}
               {isExpanded && (
-                <div className="ml-6 border border-slate-200 dark:border-slate-800 rounded-md overflow-hidden bg-white dark:bg-[#14171C] shadow-sm">
-                  <table className="w-full text-left border-collapse table-fixed">
+                <div className="ml-0 sm:ml-6 border border-slate-200 dark:border-slate-800 rounded-md overflow-x-auto bg-white dark:bg-[#14171C] shadow-sm">
+                  <table className="w-full text-left border-collapse min-w-[600px]">
                     <thead className="bg-slate-50 dark:bg-[#1C1F26] border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider">
                       <tr>
                         <th className="py-2 px-3 font-bold border-r border-slate-200 dark:border-slate-800 w-[50%]">Name</th>

@@ -64,10 +64,12 @@ export default function KanbanBoard({
 
   // Classify column IDs into standardized Status Groups
   const getStatusGroup = (statusId: string): "Not Started" | "In Progress" | "Blocked" | "Completed" => {
-    const id = statusId.toLowerCase();
-    if (id.includes("block") || id.includes("hold")) return "Blocked";
-    if (id.includes("done") || id.includes("complete") || id.includes("finish")) return "Completed";
-    if (id.includes("progress") || id.includes("going") || id.includes("active")) return "In Progress";
+    const col = project.columns.find((c) => c.id === statusId);
+    const title = (col ? col.title : statusId).toLowerCase();
+    
+    if (title.includes("block") || title.includes("hold")) return "Blocked";
+    if (title.includes("done") || title.includes("complete") || title.includes("finish")) return "Completed";
+    if (title.includes("progress") || title.includes("going") || title.includes("active")) return "In Progress";
     return "Not Started";
   };
 

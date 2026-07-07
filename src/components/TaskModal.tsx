@@ -184,12 +184,12 @@ export default function TaskModal({
     >
       <div
         id="task-modal-container"
-        className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col text-slate-800"
+        className="bg-white dark:bg-[#1C1F26] rounded-xl shadow-2xl border border-slate-200 dark:border-[#1E222B] w-full max-w-4xl max-h-[90vh] flex flex-col text-slate-800 dark:text-slate-200"
       >
         {/* Header */}
-        <div id="task-modal-header" className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 rounded-t-xl">
+        <div id="task-modal-header" className="px-6 py-4 border-b border-slate-100 dark:border-[#161A22] flex items-center justify-between bg-slate-50 dark:bg-[#0F1115] rounded-t-xl">
           <div className="flex items-center space-x-2">
-            <span className="bg-indigo-100 text-indigo-700 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-sm border border-indigo-200">
+            <span className="bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-sm border border-indigo-200 dark:border-indigo-500/20">
               {isEditing ? "Task Details" : "Create Task"}
             </span>
             {isEditing && (
@@ -199,7 +199,7 @@ export default function TaskModal({
           <button
             id="task-modal-close-btn"
             onClick={onClose}
-            className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 hover:text-slate-500 dark:text-slate-600 transition-colors"
+            className="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-[#1E222B] hover:text-slate-500 dark:hover:text-slate-400 dark:text-slate-600 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -220,7 +220,7 @@ export default function TaskModal({
                 placeholder="What needs to be done?"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3.5 py-2 text-base font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full border border-slate-200 dark:border-[#1E222B] rounded-lg px-3.5 py-2 text-base font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
             </div>
@@ -235,12 +235,12 @@ export default function TaskModal({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
-                className="w-full border border-slate-200 rounded-lg px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full border border-slate-200 dark:border-[#1E222B] rounded-lg px-3.5 py-2 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
 
             {/* Subtasks Section */}
-            <div id="subtasks-editor" className="border-t border-slate-100 pt-4">
+            <div id="subtasks-editor" className="border-t border-slate-100 dark:border-[#161A22] pt-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   <CheckSquare className="w-4 h-4 text-slate-500 dark:text-slate-400" />
@@ -253,7 +253,7 @@ export default function TaskModal({
                   <div
                     key={sub.id}
                     id={`subtask-row-${sub.id}`}
-                    className="flex items-center justify-between bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 text-sm group"
+                    className="flex items-center justify-between bg-slate-50 dark:bg-[#0F1115] px-3 py-1.5 rounded-lg border border-slate-100 dark:border-[#161A22] text-sm group"
                   >
                     <label className="flex items-center space-x-2.5 cursor-pointer flex-1">
                       <input
@@ -261,9 +261,9 @@ export default function TaskModal({
                         type="checkbox"
                         checked={sub.completed}
                         onChange={() => handleToggleSubtask(sub.id)}
-                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-600"
                       />
-                      <span className={`text-slate-700 ${sub.completed ? "line-through text-slate-500 dark:text-slate-400" : ""}`}>
+                      <span className={`text-slate-700 dark:text-slate-300 ${sub.completed ? "line-through text-slate-500 dark:text-slate-400" : ""}`}>
                         {sub.title}
                       </span>
                     </label>
@@ -292,13 +292,13 @@ export default function TaskModal({
                       handleAddSubtask();
                     }
                   }}
-                  className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="flex-1 border border-slate-200 dark:border-[#1E222B] rounded-lg px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
                 <button
                   id="add-subtask-btn"
                   type="button"
                   onClick={handleAddSubtask}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1"
+                  className="bg-slate-100 hover:bg-slate-200 dark:hover:bg-[#1E222B] text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1"
                 >
                   <Plus className="w-3 h-3" />
                   <span>Add</span>
@@ -308,7 +308,7 @@ export default function TaskModal({
 
             {/* Comments Section */}
             {isEditing && (
-              <div id="comments-section" className="border-t border-slate-100 pt-4">
+              <div id="comments-section" className="border-t border-slate-100 dark:border-[#161A22] pt-4">
                 <div className="flex items-center space-x-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
                   <MessageSquare className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                   <span>Comments ({comments.length})</span>
@@ -319,12 +319,12 @@ export default function TaskModal({
                     <p className="text-xs text-slate-500 dark:text-slate-400 italic">No comments posted yet.</p>
                   ) : (
                     comments.map((com) => (
-                      <div key={com.id} className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-xs">
+                      <div key={com.id} className="bg-slate-50 dark:bg-[#0F1115] p-2.5 rounded-lg border border-slate-100 dark:border-[#161A22] text-xs">
                         <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1 font-semibold">
                           <span>{com.author}</span>
                           <span className="font-mono text-[10px]">{com.date}</span>
                         </div>
-                        <p className="text-slate-700 leading-relaxed">{com.text}</p>
+                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{com.text}</p>
                       </div>
                     ))
                   )}
@@ -343,13 +343,13 @@ export default function TaskModal({
                         handleAddComment();
                       }
                     }}
-                    className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="flex-1 border border-slate-200 dark:border-[#1E222B] rounded-lg px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
                   <button
                     id="add-comment-btn"
                     type="button"
                     onClick={handleAddComment}
-                    className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3.5 py-1.5 rounded-lg text-xs font-semibold"
+                    className="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 px-3.5 py-1.5 rounded-lg text-xs font-semibold"
                   >
                     Post
                   </button>
@@ -359,7 +359,7 @@ export default function TaskModal({
           </div>
 
           {/* Right Column (Meta Settings & Sidebar parameters) */}
-          <div className="w-full md:w-80 bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
+          <div className="w-full md:w-80 bg-slate-50 dark:bg-[#0F1115] p-4 rounded-xl border border-slate-100 dark:border-[#161A22] space-y-4">
             
             {/* Status Dropdown */}
             <div>
@@ -370,7 +370,7 @@ export default function TaskModal({
                 id="task-status-select"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 {columns.map((col) => (
                   <option key={col.id} value={col.id}>
@@ -390,7 +390,7 @@ export default function TaskModal({
                 id="task-assignee-select"
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 {projectMembers.map((member) => (
                   <option key={member} value={member}>
@@ -410,7 +410,7 @@ export default function TaskModal({
                 id="task-priority-select"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold capitalize focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-lg px-3 py-1.5 text-xs font-semibold capitalize focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 {PRIORITIES.map((p) => (
                   <option key={p.value} value={p.value}>
@@ -432,7 +432,7 @@ export default function TaskModal({
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+                  className="w-full bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-lg px-2 py-1.5 text-xs focus:outline-none"
                 />
               </div>
               <div>
@@ -445,7 +445,7 @@ export default function TaskModal({
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+                  className="w-full bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-lg px-2 py-1.5 text-xs focus:outline-none"
                 />
               </div>
             </div>
@@ -463,7 +463,7 @@ export default function TaskModal({
                   min="0"
                   value={estimatedHours}
                   onChange={(e) => setEstimatedHours(Math.max(0, Number(e.target.value)))}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-900 focus:outline-none"
+                  className="w-full bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
               <div>
@@ -477,13 +477,13 @@ export default function TaskModal({
                   min="0"
                   value={actualHours}
                   onChange={(e) => setActualHours(Math.max(0, Number(e.target.value)))}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-900 focus:outline-none"
+                  className="w-full bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Gantt & ClickUp advanced properties */}
-            <div className="grid grid-cols-2 gap-3 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+            <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-[#0F1115] p-2.5 rounded-lg border border-slate-100 dark:border-[#161A22]">
               {/* Milestone toggle */}
               <div className="flex flex-col justify-center">
                 <span className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 flex items-center space-x-1">
@@ -495,10 +495,10 @@ export default function TaskModal({
                     type="checkbox"
                     checked={isMilestone}
                     onChange={(e) => setIsMilestone(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                   />
                   <div className="text-xs">
-                    <span className="font-bold text-slate-700">Milestone Task</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-300">Milestone Task</span>
                     <p className="text-[9px] text-slate-500 dark:text-slate-400 leading-none">Diamond target checkpoint</p>
                   </div>
                 </label>
@@ -528,7 +528,7 @@ export default function TaskModal({
             </div>
 
             {/* Dependency Predecessors linking */}
-            <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+            <div className="bg-slate-50 dark:bg-[#0F1115] p-2.5 rounded-lg border border-slate-100 dark:border-[#161A22]">
               <label htmlFor="dep-task-select" className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 flex items-center space-x-1">
                 <Plus className="w-3.5 h-3.5 text-rose-500" />
                 <span>Predecessors (Gantt Link)</span>
@@ -545,7 +545,7 @@ export default function TaskModal({
                     }
                     e.target.value = ""; // reset selection
                   }}
-                  className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none flex-1 font-medium cursor-pointer"
+                  className="bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-lg px-2 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none flex-1 font-medium cursor-pointer"
                 >
                   <option value="">Link a Predecessor Task...</option>
                   {allTasks
@@ -568,7 +568,7 @@ export default function TaskModal({
                     return (
                       <div
                         key={depId}
-                        className="flex items-center space-x-1 px-2 py-1 bg-white border border-slate-200 rounded-lg shadow-xs text-[10px] text-slate-700 hover:border-slate-300"
+                        className="flex items-center space-x-1 px-2 py-1 bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-lg shadow-xs text-[10px] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600"
                       >
                         <span 
                           className="w-1.5 h-1.5 rounded-full" 
@@ -611,8 +611,8 @@ export default function TaskModal({
                         onClick={() => handleToggleTag(tag)}
                         className={`text-[10px] px-2 py-0.5 rounded font-medium border transition-all ${
                           isSelected
-                            ? "bg-indigo-600 text-slate-900 dark:text-white border-indigo-700"
-                            : "bg-white text-slate-500 dark:text-slate-600 border-slate-200 hover:bg-slate-100"
+                            ? "bg-indigo-600 text-slate-900 dark:text-white dark:text-white border-indigo-700"
+                            : "bg-white dark:bg-[#14171C] text-slate-500 dark:text-slate-600 border-slate-200 hover:bg-slate-100 dark:hover:bg-[#1E222B]"
                         }`}
                       >
                         {tag}
@@ -636,13 +636,13 @@ export default function TaskModal({
                       handleAddNewTag();
                     }
                   }}
-                  className="flex-1 bg-white border border-slate-200 rounded px-2 py-1 text-[10px] text-slate-700 focus:outline-none"
+                  className="flex-1 bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded px-2 py-1 text-[10px] text-slate-700 dark:text-slate-300 focus:outline-none"
                 />
                 <button
                   id="create-new-tag-btn"
                   type="button"
                   onClick={handleAddNewTag}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded text-[10px] font-semibold"
+                  className="bg-slate-100 hover:bg-slate-200 dark:hover:bg-[#1E222B] text-slate-700 dark:text-slate-300 px-2 py-1 rounded text-[10px] font-semibold"
                 >
                   Create
                 </button>
@@ -653,7 +653,7 @@ export default function TaskModal({
         </form>
 
         {/* Footer Actions */}
-        <div id="task-modal-footer" className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between rounded-b-xl">
+        <div id="task-modal-footer" className="px-6 py-4 border-t border-slate-100 dark:border-[#161A22] bg-slate-50 dark:bg-[#0F1115] flex items-center justify-between rounded-b-xl">
           <div>
             {isEditing && onDelete && (
               <button
@@ -676,7 +676,7 @@ export default function TaskModal({
               id="task-cancel-btn-action"
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-slate-200 text-slate-500 dark:text-slate-600 hover:bg-slate-100 rounded-lg text-xs font-semibold transition-colors"
+              className="px-4 py-2 border border-slate-200 dark:border-[#1E222B] text-slate-500 dark:text-slate-600 hover:bg-slate-100 dark:hover:bg-[#1E222B] rounded-lg text-xs font-semibold transition-colors"
             >
               Cancel
             </button>

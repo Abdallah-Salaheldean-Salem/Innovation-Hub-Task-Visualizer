@@ -312,22 +312,22 @@ export default function CalendarView({
         </div>
 
         {/* Calendar Grid Container */}
-        <div className="flex-1 flex flex-col bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-xl overflow-hidden shadow-xs">
-          
-          {/* Weekdays Headers */}
-          <div className="grid grid-cols-7 border-b border-slate-200 dark:border-[#1E222B] bg-slate-50 dark:bg-[#0B0D11] select-none">
-            {weekdayNames.map((day) => (
-              <div
-                key={day}
-                className="py-2.5 text-center text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-[#1E222B] last:border-r-0"
-              >
-                {day}
-              </div>
-            ))}
-          </div>
+        <div className="flex-1 overflow-x-auto overflow-y-hidden bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-xl shadow-xs flex flex-col">
+          <div className="flex-1 flex flex-col min-w-[700px]">
+            {/* Weekdays Headers */}
+            <div className="grid grid-cols-7 border-b border-slate-200 dark:border-[#1E222B] bg-slate-50 dark:bg-[#0B0D11] select-none">
+              {weekdayNames.map((day) => (
+                <div
+                  key={day}
+                  className="py-2.5 text-center text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-[#1E222B] last:border-r-0"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
 
-          {/* Monthly Days Grid */}
-          <div className="flex-1 grid grid-cols-7 grid-rows-6">
+            {/* Monthly Days Grid */}
+            <div className="flex-1 grid grid-cols-7 grid-rows-6">
             {calendarCells.map(({ date, isCurrentMonth, dateStr }, idx) => {
               const dayTasks = filteredTasks.filter((t) => t.dueDate === dateStr);
               const isTodayCell = isToday(date);
@@ -403,12 +403,13 @@ export default function CalendarView({
               );
             })}
           </div>
+          </div>
         </div>
       </div>
 
       {/* RIGHT PANEL: SIDEBAR DRAWER FOR UNSCHEDULED TASKS */}
       {showUnscheduled && (
-        <div id="calendar-unscheduled-sidebar" className="w-80 h-full flex flex-col bg-white dark:bg-[#14171C] overflow-hidden shrink-0 select-none">
+        <div id="calendar-unscheduled-sidebar" className="w-80 h-full flex flex-col bg-white dark:bg-[#14171C] overflow-hidden shrink-0 select-none absolute md:relative right-0 z-20 border-l border-slate-200 dark:border-[#1E222B]">
           <div className="p-4 border-b border-slate-200 dark:border-[#1E222B] flex items-center justify-between bg-slate-50 dark:bg-[#0B0D11]/30">
             <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
               <CalendarIcon className="w-4 h-4" />

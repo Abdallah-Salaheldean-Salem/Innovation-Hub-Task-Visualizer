@@ -733,7 +733,7 @@ export default function TimelineView({ project, onOpenTaskModal, onUpdateProject
         {/* Left Side dynamic task spreadsheet */}
         <div
           id="gantt-sidebar-pane"
-          className={`w-[480px] shrink-0 border-r flex flex-col overflow-y-auto select-none divide-y ${
+          className={`w-48 md:w-64 lg:w-[480px] shrink-0 border-r flex flex-col overflow-auto select-none divide-y ${
             "bg-white dark:bg-[#101216] border-slate-200 dark:border-slate-800 divide-slate-800/40"
           }`}
         >

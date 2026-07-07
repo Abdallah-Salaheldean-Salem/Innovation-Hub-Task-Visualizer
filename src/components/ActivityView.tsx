@@ -4,6 +4,7 @@ import { Clock, Check, Plus, Trash2, Edit2, Coffee, Calendar, User, Tag, HelpCir
 
 interface ActivityViewProps {
   project: Project;
+  onUpdateProject?: (updatedProj: Project) => void;
 }
 
 interface DailyLog {
@@ -12,7 +13,7 @@ interface DailyLog {
   taskId: string;
   taskTitle: string;
   description: string;
-  status: "Completed" | "In Progress" | "Not Started" | "Blocked";
+  status: string;
   time: string;
   assignee: string;
   hours: number;
@@ -54,7 +55,7 @@ const INITIAL_LOGS: DailyLog[] = [
   }
 ];
 
-export default function ActivityView({ project }: ActivityViewProps) {
+export default function ActivityView({ project, onUpdateProject }: ActivityViewProps) {
   // Persistence for daily logs
   const [logs, setLogs] = useState<DailyLog[]>(() => {
     const saved = localStorage.getItem("clickup_daily_logs");
@@ -69,8 +70,12 @@ export default function ActivityView({ project }: ActivityViewProps) {
   const [targetDate, setTargetDate] = useState("2026-06-19");
   const [linkedTaskId, setLinkedTaskId] = useState("");
   const [completedText, setCompletedText] = useState("");
-  const [logStatus, setLogStatus] = useState<DailyLog["status"]>("Completed");
-  const [whoCompleted, setWhoCompleted] = useState("Abdallah");
+  const teamList = project.members && project.members.length > 0
+    ? project.members.map(m => m.name)
+    : ["Unassigned"];
+
+  const [logStatus, setLogStatus] = useState<DailyLog["status"]>(project.columns?.[0]?.id || "Completed");
+  const [whoCompleted, setWhoCompleted] = useState(teamList[0]);
   const [loggedHours, setLoggedHours] = useState(4);
   const [loggedTime, setLoggedTime] = useState("10:00 AM");
   const [additionalNotes, setAdditionalNotes] = useState("");
@@ -78,14 +83,18 @@ export default function ActivityView({ project }: ActivityViewProps) {
   // Edit mode state
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
 
-  // Sync default assignee to active user or project list if needed
-  const teamList = ["Abdallah", "Sallam", "Alice", "Bob", "Charlie", "Diana"];
-
   // Filter logs based on selected target date
-  const filteredLogs = logs.filter((log) => log.date === targetDate);
+  const displayLogs = logs
+    .filter((log) => log.date === targetDate && project.tasks.some((t) => t.id === log.taskId))
+    .map((log) => {
+      const globalTask = project.tasks.find((t) => t.id === log.taskId);
+      return globalTask
+        ? { ...log, taskTitle: globalTask.title, status: globalTask.status }
+        : log;
+    });
 
   // Compute total logged hours for this date range
-  const totalLoggedHours = filteredLogs.reduce((sum, log) => sum + (Number(log.hours) || 0), 0);
+  const totalLoggedHours = displayLogs.reduce((sum, log) => sum + (Number(log.hours) || 0), 0);
 
   // Handle Log Creation/Update
   const handleLogSubmit = (e: React.FormEvent) => {
@@ -97,17 +106,62 @@ export default function ActivityView({ project }: ActivityViewProps) {
     // Determine task ID and label
     let finalTaskId = "TASK-" + Math.floor(100 + Math.random() * 900);
     let finalTaskTitle = completedText;
+    let isNewTask = true;
 
     if (linkedTaskId) {
       const selectedTask = project.tasks.find((t) => t.id === linkedTaskId);
       if (selectedTask) {
         finalTaskId = selectedTask.id;
         finalTaskTitle = selectedTask.title;
+        isNewTask = false;
       }
     }
 
+    if (isNewTask && onUpdateProject) {
+      const columnId = logStatus || project.columns[0]?.id || "todo";
+      const newTask = {
+        id: finalTaskId,
+        title: finalTaskTitle,
+        description: additionalNotes || "Created from Daily Logs board",
+        status: columnId,
+        priority: "medium" as const,
+        dueDate: targetDate || new Date().toISOString().split("T")[0],
+        startDate: targetDate || new Date().toISOString().split("T")[0],
+        assignee: whoCompleted || "Unassigned",
+        tags: [],
+        estimatedHours: Number(loggedHours) || 4,
+        actualHours: Number(loggedHours) || 0,
+        subtasks: [],
+        comments: [],
+        createdAt: new Date().toISOString(),
+      };
+      onUpdateProject({
+        ...project,
+        tasks: [...project.tasks, newTask]
+      });
+    }
+
+    if (!isNewTask && onUpdateProject) {
+      const updatedTasks = project.tasks.map(t => {
+        if (t.id === finalTaskId) {
+          return {
+            ...t,
+            title: finalTaskTitle,
+            description: additionalNotes || t.description,
+            status: logStatus,
+            dueDate: targetDate || t.dueDate,
+            startDate: targetDate || t.startDate,
+            assignee: whoCompleted || t.assignee,
+            actualHours: (t.actualHours || 0) + (Number(loggedHours) || 0)
+          };
+        }
+        return t;
+      });
+      onUpdateProject({ ...project, tasks: updatedTasks });
+    }
+
     if (editingLogId) {
-      // Update existing
+      // Update existing log
       setLogs(
         logs.map((log) => {
           if (log.id === editingLogId) {
@@ -164,6 +218,14 @@ export default function ActivityView({ project }: ActivityViewProps) {
 
   // Delete log handler
   const handleDeleteLog = (id: string) => {
+    const logToDelete = logs.find(l => l.id === id);
+    if (logToDelete && onUpdateProject) {
+      onUpdateProject({
+        ...project,
+        tasks: project.tasks.filter(t => t.id !== logToDelete.taskId)
+      });
+    }
+    
     setLogs(logs.filter((log) => log.id !== id));
     if (editingLogId === id) {
       setEditingLogId(null);
@@ -204,17 +266,26 @@ export default function ActivityView({ project }: ActivityViewProps) {
   };
 
   // Render status badge classes
-  const getStatusBadge = (status: DailyLog["status"]) => {
-    switch (status) {
-      case "Completed":
-        return "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20";
-      case "In Progress":
-        return "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20";
-      case "Blocked":
-        return "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20";
-      default:
-        return "bg-slate-100 dark:bg-slate-700/30 text-slate-500 dark:text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50";
+  const getStatusBadge = (status: string) => {
+    const col = project.columns.find(c => c.id === status);
+    const title = col ? col.title : status;
+    const lowerTitle = title.toLowerCase();
+
+    if (lowerTitle.includes("complete") || lowerTitle.includes("done")) {
+      return "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20";
     }
+    if (lowerTitle.includes("progress")) {
+      return "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20";
+    }
+    if (lowerTitle.includes("block")) {
+      return "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20";
+    }
+    return "bg-slate-100 dark:bg-slate-700/30 text-slate-500 dark:text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50";
+  };
+
+  const getStatusDisplay = (status: string) => {
+    const col = project.columns.find(c => c.id === status);
+    return col ? col.title : status;
   };
 
   return (
@@ -302,10 +373,11 @@ export default function ActivityView({ project }: ActivityViewProps) {
                 onChange={(e) => setLogStatus(e.target.value as DailyLog["status"])}
                 className="w-full bg-slate-50 dark:bg-[#0B0D11] border border-slate-200 dark:border-[#1E222B] text-slate-800 dark:text-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 transition-colors"
               >
-                <option value="Completed" className="bg-white dark:bg-[#14171C] text-slate-800 dark:text-slate-300">Completed</option>
-                <option value="In Progress" className="bg-white dark:bg-[#14171C] text-slate-800 dark:text-slate-300">In Progress</option>
-                <option value="Not Started" className="bg-white dark:bg-[#14171C] text-slate-800 dark:text-slate-300">Not Started</option>
-                <option value="Blocked" className="bg-white dark:bg-[#14171C] text-slate-800 dark:text-slate-300">Blocked</option>
+                {project.columns.map(col => (
+                  <option key={col.id} value={col.id} className="bg-white dark:bg-[#14171C] text-slate-800 dark:text-slate-300">
+                    {col.title}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -406,7 +478,7 @@ export default function ActivityView({ project }: ActivityViewProps) {
               Sprint Logs for {targetDate}
             </span>
             <h4 className="text-sm font-bold text-slate-800 dark:text-white mt-1">
-              {filteredLogs.length} {filteredLogs.length === 1 ? "report" : "reports"} assigned to this target date range.
+              {displayLogs.length} {displayLogs.length === 1 ? "report" : "reports"} assigned to this target date range.
             </h4>
           </div>
           <div className="text-right shrink-0">
@@ -421,14 +493,14 @@ export default function ActivityView({ project }: ActivityViewProps) {
 
         {/* List of filtered logs */}
         <div className="flex-1 space-y-3 overflow-y-auto pr-1">
-          {filteredLogs.length === 0 ? (
+          {displayLogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <Calendar className="w-12 h-12 text-slate-350 dark:text-slate-700 stroke-[1.5] mb-3" />
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">No activity records logged for {targetDate}.</p>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Use the Task Logger panel to add a task report on this date.</p>
             </div>
           ) : (
-            filteredLogs.map((log) => (
+            displayLogs.map((log) => (
               <div
                 key={log.id}
                 className="bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-[#1E222B] hover:border-indigo-500/20 dark:hover:border-indigo-500/20 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:hover:shadow-[0_2px_12px_rgba(0,0,0,0.3)]"
@@ -436,7 +508,7 @@ export default function ActivityView({ project }: ActivityViewProps) {
                 {/* Left block: checkbox, task ID, details */}
                 <div className="flex items-start space-x-3.5 flex-1">
                   <div className="pt-0.5">
-                    {log.status === "Completed" ? (
+                    {(getStatusDisplay(log.status).toLowerCase().includes("complete") || getStatusDisplay(log.status).toLowerCase().includes("done")) ? (
                       <div className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center text-slate-900 dark:text-white">
                         <Check className="w-2.5 h-2.5 stroke-[4]" />
                       </div>
@@ -451,7 +523,7 @@ export default function ActivityView({ project }: ActivityViewProps) {
                         {log.taskId}
                       </span>
                       <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${getStatusBadge(log.status)}`}>
-                        {log.status}
+                        {getStatusDisplay(log.status)}
                       </span>
                       <span className="text-[10px] text-slate-500 dark:text-slate-600 dark:text-slate-400 font-medium bg-slate-100/80 dark:bg-[#1e222b]/50 px-2 py-0.5 rounded border border-slate-200 dark:border-[#1E222B] flex items-center gap-1">
                         <Calendar className="w-3 h-3 text-slate-500 dark:text-slate-400" />
@@ -464,7 +536,7 @@ export default function ActivityView({ project }: ActivityViewProps) {
                     </div>
 
                     <h5 className={`text-xs font-bold tracking-wide leading-snug ${
-                      log.status === "Completed"
+                      (getStatusDisplay(log.status).toLowerCase().includes("complete") || getStatusDisplay(log.status).toLowerCase().includes("done"))
                         ? "line-through text-slate-500 dark:text-slate-400 dark:text-slate-500 font-normal"
                         : "text-slate-800 dark:text-slate-100"
                     }`}>

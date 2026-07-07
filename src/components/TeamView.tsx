@@ -190,8 +190,8 @@ export default function TeamView({ project, onUpdateProject }: TeamViewProps) {
                   Active Member Allocation Sheet
                 </span>
               </div>
-              <div className="p-4">
-                <table className="w-full text-left border-collapse text-xs">
+              <div className="p-4 overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs min-w-[400px]">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-[#1E222B] bg-slate-50 dark:bg-[#1C1F26]/20 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px]">
                       <th className="py-2.5 px-3">Assignee</th>

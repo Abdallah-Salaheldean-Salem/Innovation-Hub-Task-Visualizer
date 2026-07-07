@@ -47,7 +47,7 @@ export default function Sidebar({
     { id: "board", label: "2. Board View", icon: Kanban },
     { id: "calendar", label: "3. Calendar Grid", icon: CalendarDays },
     { id: "team", label: "4. Team View", icon: Users },
-    { id: "gantt", label: "5. Gantt Schedule", icon: Calendar },
+    { id: "gantt", label: "5. Gantt Chart", icon: Calendar },
     { id: "ideas", label: "6. Ideas & Priorities", icon: Lightbulb },
     { id: "activity", label: "7. Activity Log", icon: Clock },
     { id: "settings", label: "8. Settings View", icon: Settings },

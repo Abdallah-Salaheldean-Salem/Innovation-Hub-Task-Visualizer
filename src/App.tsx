@@ -48,12 +48,12 @@ export default function App() {
   }, []);
 
   const [projects, setProjects] = useState<Project[]>(() => {
-    const saved = localStorage.getItem("clickup_projects");
+    const saved = localStorage.getItem("clickup_projects_v3");
     return saved ? JSON.parse(saved) : INITIAL_PROJECTS;
   });
 
   const [activeProjectId, setActiveProjectId] = useState<string>(() => {
-    const saved = localStorage.getItem("clickup_active_project_id");
+    const saved = localStorage.getItem("clickup_active_project_id_v3");
     return saved || INITIAL_PROJECTS[0].id;
   });
 
@@ -99,12 +99,12 @@ export default function App() {
 
   // Sync to localStorage and Supabase
   useEffect(() => {
-    localStorage.setItem("clickup_projects", JSON.stringify(projects));
+    localStorage.setItem("clickup_projects_v3", JSON.stringify(projects));
     saveProjectsBulk(projects).catch(console.error);
   }, [projects]);
 
   useEffect(() => {
-    localStorage.setItem("clickup_active_project_id", activeProjectId);
+    localStorage.setItem("clickup_active_project_id_v3", activeProjectId);
   }, [activeProjectId]);
 
   useEffect(() => {
@@ -270,8 +270,8 @@ export default function App() {
   };
 
   const handleResetWorkspace = () => {
-    localStorage.removeItem("clickup_projects");
-    localStorage.removeItem("clickup_active_project_id");
+    localStorage.removeItem("clickup_projects_v3");
+    localStorage.removeItem("clickup_active_project_id_v3");
     localStorage.removeItem("clickup_active_view");
     localStorage.removeItem("clickup_daily_logs");
     setProjects(INITIAL_PROJECTS);
@@ -283,9 +283,21 @@ export default function App() {
 
   // Dynamic Metrics Computation
   const totalTasksCount = activeProject.tasks.length;
-  const inProgressCount = activeProject.tasks.filter((t) => t.status === "col-progress" || t.status.toLowerCase().includes("progress")).length;
-  const blockedCount = activeProject.tasks.filter((t) => t.status === "col-blocked" || t.status.toLowerCase().includes("block")).length || 2;
-  const completedCount = activeProject.tasks.filter((t) => t.status === "col-done" || t.status.toLowerCase().includes("done") || t.status.toLowerCase().includes("complete")).length;
+  const inProgressCount = activeProject.tasks.filter((t) => {
+    const col = activeProject.columns.find(c => c.id === t.status);
+    const title = (col ? col.title : t.status).toLowerCase();
+    return title.includes("progress") || title.includes("going") || title.includes("active");
+  }).length;
+  const blockedCount = activeProject.tasks.filter((t) => {
+    const col = activeProject.columns.find(c => c.id === t.status);
+    const title = (col ? col.title : t.status).toLowerCase();
+    return title.includes("block") || title.includes("hold");
+  }).length;
+  const completedCount = activeProject.tasks.filter((t) => {
+    const col = activeProject.columns.find(c => c.id === t.status);
+    const title = (col ? col.title : t.status).toLowerCase();
+    return title.includes("done") || title.includes("complete") || title.includes("finish");
+  }).length;
   const completionPercentage = totalTasksCount > 0 ? Math.round((completedCount / totalTasksCount) * 100) : 0;
 
   // Extract unique assignees dynamically from active project tasks
@@ -299,8 +311,8 @@ export default function App() {
     { value: "board" as AppView, label: "Board View", icon: "📊" },
     { value: "list" as AppView, label: "Spreadsheet", icon: "📋" },
     { value: "calendar" as AppView, label: "Calendar Grid", icon: "📅" },
+    { value: "gantt" as AppView, label: "Gantt Chart", icon: "📈" },
     { value: "team" as AppView, label: "Team View", icon: "👥" },
-    { value: "gantt" as AppView, label: "Timeline", icon: "📈" },
     { value: "ideas" as AppView, label: "Ideas & Priorities", icon: "💡" },
     { value: "settings" as AppView, label: "Settings", icon: "⚙️" },
   ];
@@ -319,15 +331,20 @@ export default function App() {
       
       {/* Conditionally rendered Sidebar */}
       {isSidebarOpen && (
-        <Sidebar
-          projects={projects}
-          activeProjectId={activeProjectId}
-          onSelectProject={handleSelectProject}
-          onCreateProject={handleCreateProject}
-          onDeleteProject={handleDeleteProject}
-          activeView={activeView}
-          onSelectView={setActiveView}
-        />
+        <>
+          <div className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
+          <div className="fixed inset-y-0 left-0 z-50 md:relative md:z-auto">
+            <Sidebar
+              projects={projects}
+              activeProjectId={activeProjectId}
+              onSelectProject={handleSelectProject}
+              onCreateProject={handleCreateProject}
+              onDeleteProject={handleDeleteProject}
+              activeView={activeView}
+              onSelectView={setActiveView}
+            />
+          </div>
+        </>
       )}
 
       {/* Main Workspace Stage */}
@@ -345,8 +362,8 @@ export default function App() {
               <Menu className="w-4 h-4" />
             </button>
             <div className="flex items-center space-x-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-              <LayoutGrid className="w-3.5 h-3.5 text-indigo-400" />
-              <span className="text-slate-800 dark:text-slate-200">Innovation Hub Project Tracker Dashboard</span>
+              <LayoutGrid className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+              <span className="text-slate-800 dark:text-slate-200 hidden sm:block truncate">Innovation Hub Project Tracker Dashboard</span>
             </div>
             
             {/* Workspace quick selector */}
@@ -393,7 +410,7 @@ export default function App() {
               className="px-2.5 py-1 text-[11px] font-bold bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] hover:bg-slate-200 dark:hover:bg-[#1E222B] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white rounded-lg flex items-center space-x-1.5 transition-colors cursor-pointer"
             >
               <Copy className="w-3 h-3 text-slate-500 dark:text-slate-400" />
-              <span>Copy link</span>
+              <span className="hidden sm:inline">Copy link</span>
             </button>
 
             {/* View Data Snapshot dialog trigger */}
@@ -403,7 +420,7 @@ export default function App() {
               className="px-2.5 py-1 text-[11px] font-bold bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] hover:bg-slate-200 dark:hover:bg-[#1E222B] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white rounded-lg flex items-center space-x-1.5 transition-colors cursor-pointer"
             >
               <Eye className="w-3 h-3 text-slate-500 dark:text-slate-400" />
-              <span>View data</span>
+              <span className="hidden sm:inline">View data</span>
             </button>
 
             {/* Theme Toggle Button */}
@@ -415,12 +432,12 @@ export default function App() {
               {theme === "dark" ? (
                 <>
                   <Sun className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Light Mode</span>
+                  <span className="hidden sm:inline">Light Mode</span>
                 </>
               ) : (
                 <>
                   <Moon className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Dark Mode</span>
+                  <span className="hidden sm:inline">Dark Mode</span>
                 </>
               )}
             </button>
@@ -702,6 +719,7 @@ export default function App() {
           {activeView === "activity" && (
             <ActivityView
               project={activeProject}
+              onUpdateProject={handleUpdateProject}
             />
           )}
 

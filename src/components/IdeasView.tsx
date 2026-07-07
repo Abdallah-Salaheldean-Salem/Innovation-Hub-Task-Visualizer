@@ -51,58 +51,7 @@ const ZONES = [
 ];
 
 export default function IdeasView({ project, onUpdateProject }: IdeasViewProps) {
-  const defaultIdeas: IdeaItem[] = [
-    {
-      id: "idea-001",
-      timeHorizon: "Next Month",
-      title: "Define policies & entities",
-      description: "Requires comprehensive breakdown of scope.",
-      targetDate: "",
-      status: "ready",
-      priority: "High",
-      zone: ""
-    },
-    {
-      id: "idea-002",
-      timeHorizon: "Next Month",
-      title: "Build fixed-asset report (safety focus)",
-      description: "Requires comprehensive breakdown of scope.",
-      targetDate: "",
-      status: "ready",
-      priority: "High",
-      zone: ""
-    },
-    {
-      id: "idea-003",
-      timeHorizon: "Next Month",
-      title: "Roll out QR-code system for assets",
-      description: "Requires comprehensive breakdown of scope.",
-      targetDate: "",
-      status: "ready",
-      priority: "High",
-      zone: ""
-    },
-    {
-      id: "idea-004",
-      timeHorizon: "Someday",
-      title: "Email automation + work dashboard + decision log",
-      description: "Requires comprehensive breakdown of scope.",
-      targetDate: "",
-      status: "building",
-      priority: "Medium",
-      zone: ""
-    },
-    {
-      id: "idea-005",
-      timeHorizon: "Someday",
-      title: "Establish PCB production line",
-      description: "Requires comprehensive breakdown of scope.",
-      targetDate: "",
-      status: "building",
-      priority: "Medium",
-      zone: ""
-    }
-  ];
+  const defaultIdeas: IdeaItem[] = [];
 
   const ideas = project.ideas && project.ideas.length > 0 ? project.ideas : defaultIdeas;
 
