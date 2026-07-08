@@ -180,11 +180,11 @@ export default function TaskModal({
   return (
     <div
       id="task-modal-overlay"
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 overflow-y-auto"
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto"
     >
       <div
         id="task-modal-container"
-        className="bg-white dark:bg-[#1C1F26] rounded-xl shadow-2xl border border-slate-200 dark:border-[#1E222B] w-full max-w-4xl max-h-[90vh] flex flex-col text-slate-800 dark:text-slate-200"
+        className="bg-white dark:bg-[#1C1F26] rounded-xl shadow-2xl border border-slate-200 dark:border-[#1E222B] w-full max-w-4xl max-h-[90dvh] flex flex-col text-slate-800 dark:text-slate-200"
       >
         {/* Header */}
         <div id="task-modal-header" className="px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-[#161A22] flex items-center justify-between bg-slate-50 dark:bg-[#0F1115] rounded-t-xl">

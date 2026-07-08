@@ -85,7 +85,7 @@ export default function ListView({
                     e.stopPropagation();
                     onOpenTaskModal(null, col.id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-1 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
+                  className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
@@ -145,7 +145,7 @@ export default function ListView({
                             </div>
                           </td>
                           <td className="py-1.5 px-3 text-center text-slate-400 cursor-pointer" onClick={() => onOpenTaskModal(task)}>
-                             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex justify-center">
+                             <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex justify-center">
                                 <button className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500"><Edit2 className="w-3.5 h-3.5" /></button>
                              </div>
                           </td>

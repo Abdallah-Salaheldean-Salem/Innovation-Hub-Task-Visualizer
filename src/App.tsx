@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Project, Task, AppView } from "./types";
 import { INITIAL_PROJECTS } from "./data";
-import { fetchProjects, saveProjectsBulk } from "./lib/supabase-sync";
+import { fetchProjects, saveProjectsBulk, deleteProjectRemote, stableStringify } from "./lib/supabase-sync";
 import Sidebar from "./components/Sidebar";
 import KanbanBoard from "./components/KanbanBoard";
 import ListView from "./components/ListView";
@@ -38,15 +38,6 @@ import {
 
 export default function App() {
   // Global States
-  // Fetch from Supabase on mount (if configured)
-  useEffect(() => {
-    fetchProjects().then((data) => {
-      if (data && data.length > 0) {
-        setProjects(data);
-      }
-    });
-  }, []);
-
   const [projects, setProjects] = useState<Project[]>(() => {
     const saved = localStorage.getItem("clickup_projects_v5");
     return saved ? JSON.parse(saved) : INITIAL_PROJECTS;
@@ -97,11 +88,102 @@ export default function App() {
     }
   }, [theme]);
 
-  // Sync to localStorage and Supabase
+  // Sync to localStorage (fast local cache for instant loads)
   useEffect(() => {
     localStorage.setItem("clickup_projects_v5", JSON.stringify(projects));
-    saveProjectsBulk(projects).catch(console.error);
   }, [projects]);
+
+  // --- Shared workspace synchronization ---
+  // Supabase is the shared source of truth: on load we adopt the remote
+  // workspace (seeding it only on the very first run anywhere), and only
+  // after that do local edits get pushed. This prevents a fresh visitor's
+  // seed data from overwriting everyone's shared workspace.
+  const [syncReady, setSyncReady] = useState(false);
+  const syncReadyRef = useRef(false);
+  const projectsRef = useRef(projects);
+  const lastSyncedRef = useRef<Map<string, Project>>(new Map());
+  const dirtyRef = useRef(false);
+  const savingRef = useRef(false);
+
+  useEffect(() => {
+    projectsRef.current = projects;
+  }, [projects]);
+
+  const adoptRemote = (remote: Project[]) => {
+    lastSyncedRef.current = new Map(remote.map((p) => [p.id, p]));
+    setProjects(remote);
+    setActiveProjectId((prev) =>
+      remote.some((p) => p.id === prev) ? prev : remote[0].id
+    );
+  };
+
+  const initialLoad = async () => {
+    const remote = await fetchProjects();
+    if (remote === null || syncReadyRef.current) return;
+    if (remote.length > 0) {
+      adoptRemote(remote);
+    } else {
+      // Empty table: first run anywhere — publish the local workspace.
+      const seeded = await saveProjectsBulk(projectsRef.current);
+      if (!seeded) return;
+      projectsRef.current.forEach((p) => lastSyncedRef.current.set(p.id, p));
+    }
+    syncReadyRef.current = true;
+    setSyncReady(true);
+  };
+  const initialLoadRef = useRef(initialLoad);
+  initialLoadRef.current = initialLoad;
+
+  useEffect(() => {
+    initialLoadRef.current();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Push only the projects that actually changed, debounced.
+  useEffect(() => {
+    if (!syncReady) return;
+    const changed = projects.filter((p) => lastSyncedRef.current.get(p.id) !== p);
+    if (changed.length === 0) return;
+    dirtyRef.current = true;
+    const timer = setTimeout(async () => {
+      savingRef.current = true;
+      const ok = await saveProjectsBulk(changed);
+      savingRef.current = false;
+      if (ok) {
+        changed.forEach((p) => lastSyncedRef.current.set(p.id, p));
+        dirtyRef.current = projectsRef.current.some(
+          (p) => lastSyncedRef.current.get(p.id) !== p
+        );
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [projects, syncReady]);
+
+  // When the tab regains focus, pull the latest shared workspace — unless
+  // there are unsaved local edits in flight, which take precedence.
+  useEffect(() => {
+    const onFocus = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      if (!syncReadyRef.current) {
+        initialLoadRef.current();
+        return;
+      }
+      if (dirtyRef.current || savingRef.current) return;
+      fetchProjects().then((remote) => {
+        if (!remote || remote.length === 0) return;
+        if (dirtyRef.current || savingRef.current) return;
+        if (stableStringify(remote) === stableStringify(projectsRef.current)) return;
+        adoptRemote(remote);
+      });
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("clickup_active_project_id_v5", activeProjectId);
@@ -161,6 +243,8 @@ export default function App() {
     const remaining = projects.filter((p) => p.id !== id);
     setProjects(remaining);
     setActiveProjectId(remaining[0].id);
+    lastSyncedRef.current.delete(id);
+    deleteProjectRemote(id);
   };
 
   // Update current project (With automatic Undo history pushing!)
@@ -274,6 +358,14 @@ export default function App() {
     localStorage.removeItem("clickup_active_project_id_v5");
     localStorage.removeItem("clickup_active_view");
     localStorage.removeItem("clickup_daily_logs");
+    // Shared workspace: remove non-baseline projects remotely; the save
+    // effect then republishes the baseline data for everyone.
+    projects
+      .filter((p) => !INITIAL_PROJECTS.some((init) => init.id === p.id))
+      .forEach((p) => {
+        lastSyncedRef.current.delete(p.id);
+        deleteProjectRemote(p.id);
+      });
     setProjects(INITIAL_PROJECTS);
     setActiveProjectId(INITIAL_PROJECTS[0].id);
     setActiveView("activity");
@@ -490,7 +582,7 @@ export default function App() {
           </div>
 
           {/* 3. FOUR INLINE METRIC CARDS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
             
             {/* Card 1: Sprint Velocity */}
             <div className="bg-white dark:bg-[#14171C] border border-slate-200 dark:border-[#1E222B] rounded-xl p-4 flex items-center justify-between shadow-sm">

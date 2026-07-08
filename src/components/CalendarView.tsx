@@ -36,7 +36,10 @@ export default function CalendarView({
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [draggedOverDate, setDraggedOverDate] = useState<string | null>(null);
-  const [showUnscheduled, setShowUnscheduled] = useState<boolean>(true);
+  // Overlay drawer on phones — start closed there so it doesn't cover the grid
+  const [showUnscheduled, setShowUnscheduled] = useState<boolean>(
+    () => typeof window === "undefined" || window.innerWidth >= 768
+  );
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -409,7 +412,7 @@ export default function CalendarView({
 
       {/* RIGHT PANEL: SIDEBAR DRAWER FOR UNSCHEDULED TASKS */}
       {showUnscheduled && (
-        <div id="calendar-unscheduled-sidebar" className="w-80 h-full flex flex-col bg-white dark:bg-[#14171C] overflow-hidden shrink-0 select-none absolute md:relative right-0 z-20 border-l border-slate-200 dark:border-[#1E222B]">
+        <div id="calendar-unscheduled-sidebar" className="w-80 max-w-[85vw] h-full flex flex-col bg-white dark:bg-[#14171C] overflow-hidden shrink-0 select-none absolute md:relative right-0 z-20 border-l border-slate-200 dark:border-[#1E222B] shadow-2xl md:shadow-none">
           <div className="p-4 border-b border-slate-200 dark:border-[#1E222B] flex items-center justify-between bg-slate-50 dark:bg-[#0B0D11]/30">
             <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
               <CalendarIcon className="w-4 h-4" />

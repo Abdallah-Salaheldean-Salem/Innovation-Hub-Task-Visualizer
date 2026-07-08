@@ -250,8 +250,8 @@ export default function KanbanBoard({
     <div id="kanban-view-root" className="flex flex-col h-full bg-slate-50 dark:bg-[#0F1115] flex-1">
       {/* Board Top Toolbar */}
       <div id="kanban-toolbar" className="p-4 bg-slate-50 dark:bg-[#0F1115] border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center space-x-3 flex-1 min-w-[280px]">
-          <div className="relative flex-1">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1 min-w-0">
+          <div className="relative flex-1 min-w-[140px]">
             <Search className="w-4 h-4 text-slate-500 dark:text-slate-400 absolute left-3 top-2.5" />
             <input
               id="kanban-search-input"
@@ -1147,6 +1147,34 @@ export default function KanbanBoard({
                               <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                               <span>{task.estimatedHours || 4}h</span>
                             </div>
+                          </div>
+
+                          {/* Touch move controls — drag-and-drop doesn't fire on touchscreens */}
+                          <div className="flex md:hidden items-center justify-between mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                            <button
+                              type="button"
+                              disabled={index === 0}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMoveTask(task.id, project.columns[index - 1].id);
+                              }}
+                              className="flex items-center space-x-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-[#14171C] border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30 cursor-pointer"
+                            >
+                              <ChevronLeft className="w-3 h-3" />
+                              <span>{index > 0 ? project.columns[index - 1].title : "Move"}</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={index === project.columns.length - 1}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMoveTask(task.id, project.columns[index + 1].id);
+                              }}
+                              className="flex items-center space-x-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-[#14171C] border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-30 cursor-pointer"
+                            >
+                              <span>{index < project.columns.length - 1 ? project.columns[index + 1].title : "Move"}</span>
+                              <ChevronRight className="w-3 h-3" />
+                            </button>
                           </div>
                         </div>
                       );

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Project, Task } from "../types";
+import { fetchAppState, saveAppState } from "../lib/supabase-sync";
 import { Clock, Check, Plus, Trash2, Edit2, Coffee, Calendar, User, Tag, HelpCircle, ChevronRight } from "lucide-react";
 
 interface ActivityViewProps {
@@ -65,6 +66,45 @@ export default function ActivityView({ project, onUpdateProject }: ActivityViewP
   useEffect(() => {
     localStorage.setItem("clickup_daily_logs", JSON.stringify(logs));
   }, [logs]);
+
+  // Shared logs sync: adopt the remote feed on mount (seeding it on the very
+  // first run anywhere), then push local edits once the initial load is done.
+  const [logsSyncReady, setLogsSyncReady] = useState(false);
+  const logsRef = useRef(logs);
+  const lastSyncedLogsRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    logsRef.current = logs;
+  }, [logs]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchAppState("daily_logs").then(async (res) => {
+      if (cancelled || !res.ok) return;
+      if (res.value !== null) {
+        lastSyncedLogsRef.current = JSON.stringify(res.value);
+        setLogs(res.value as DailyLog[]);
+      } else {
+        const ok = await saveAppState("daily_logs", logsRef.current);
+        if (ok) lastSyncedLogsRef.current = JSON.stringify(logsRef.current);
+      }
+      if (!cancelled) setLogsSyncReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!logsSyncReady) return;
+    const json = JSON.stringify(logs);
+    if (json === lastSyncedLogsRef.current) return;
+    const timer = setTimeout(async () => {
+      const ok = await saveAppState("daily_logs", logs);
+      if (ok) lastSyncedLogsRef.current = json;
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [logs, logsSyncReady]);
 
   // Form states
   const [targetDate, setTargetDate] = useState("2026-06-19");
