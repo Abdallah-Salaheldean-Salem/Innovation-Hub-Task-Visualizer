@@ -210,13 +210,29 @@ export default function App() {
     visibleProjects[0] ||
     projects[0];
 
+  // Depth-ordered flattening of visible Spaces for the selector (sub-spaces
+  // nested under parents; orphans whose parent is hidden are treated as roots).
+  const visibleIds = new Set(visibleProjects.map((p) => p.id));
+  const effectiveParent = (p: Project) =>
+    p.parentId && visibleIds.has(p.parentId) ? p.parentId : undefined;
+  const orderedVisibleSpaces: { proj: Project; depth: number }[] = [];
+  const walkSpaces = (parentId: string | undefined, depth: number) => {
+    visibleProjects
+      .filter((p) => effectiveParent(p) === parentId)
+      .forEach((p) => {
+        orderedVisibleSpaces.push({ proj: p, depth });
+        walkSpaces(p.id, depth + 1);
+      });
+  };
+  walkSpaces(undefined, 0);
+
   const handleSelectProject = (id: string) => {
     setActiveProjectId(id);
     setSelectedTask(null);
   };
 
-  // Create Project Space
-  const handleCreateProject = (name: string, desc: string) => {
+  // Create Project Space (optionally nested under a parent = sub-space)
+  const handleCreateProject = (name: string, desc: string, parentId?: string) => {
     // Push old state to undo
     setUndoStack((prev) => [...prev, projects]);
     setRedoStack([]);
@@ -225,6 +241,7 @@ export default function App() {
       id: `proj-${Date.now()}`,
       name,
       description: desc,
+      parentId,
       color: SPACE_COLORS[projects.length % SPACE_COLORS.length],
       icon: SPACE_ICONS[projects.length % SPACE_ICONS.length],
       tags: ["Frontend", "Backend", "Design", "DevOps", "QA"],
@@ -250,20 +267,39 @@ export default function App() {
     setActiveProjectId(newProj.id);
   };
 
-  // Delete Project Space
+  // A Space plus all of its descendant sub-spaces (for cascading actions)
+  const collectSubtreeIds = (rootId: string): string[] => {
+    const ids = [rootId];
+    const stack = [rootId];
+    while (stack.length) {
+      const cur = stack.pop()!;
+      projects.forEach((p) => {
+        if (p.parentId === cur) {
+          ids.push(p.id);
+          stack.push(p.id);
+        }
+      });
+    }
+    return ids;
+  };
+
+  // Delete a Space and its sub-spaces
   const handleDeleteProject = (id: string) => {
-    if (projects.length <= 1) return;
+    const ids = collectSubtreeIds(id);
+    const remaining = projects.filter((p) => !ids.includes(p.id));
+    if (remaining.length === 0) return; // never delete the last Space
     setUndoStack((prev) => [...prev, projects]);
     setRedoStack([]);
 
-    const remaining = projects.filter((p) => p.id !== id);
     setProjects(remaining);
-    if (activeProjectId === id) {
+    if (ids.includes(activeProjectId)) {
       const nextActive = remaining.find((p) => !p.archived) || remaining[0];
       setActiveProjectId(nextActive.id);
     }
-    lastSyncedRef.current.delete(id);
-    deleteProjectRemote(id);
+    ids.forEach((rid) => {
+      lastSyncedRef.current.delete(rid);
+      deleteProjectRemote(rid);
+    });
   };
 
   // Duplicate a Space (deep clone with a fresh id, ClickUp-style "(Copy)")
@@ -283,25 +319,34 @@ export default function App() {
     setActiveProjectId(clone.id);
   };
 
-  // Archive a Space (soft-hide) instead of deleting it
+  // Archive a Space (and its sub-spaces) instead of deleting
   const handleArchiveProject = (id: string) => {
-    const active = projects.filter((p) => !p.archived);
-    if (active.length <= 1 && active.some((p) => p.id === id)) return; // keep one active
+    const ids = collectSubtreeIds(id);
+    const remainingActive = projects.filter((p) => !p.archived && !ids.includes(p.id));
+    if (remainingActive.length === 0) return; // keep at least one active Space
     setUndoStack((prev) => [...prev, projects]);
     setRedoStack([]);
 
-    const updated = projects.map((p) => (p.id === id ? { ...p, archived: true } : p));
+    const updated = projects.map((p) => (ids.includes(p.id) ? { ...p, archived: true } : p));
     setProjects(updated);
-    if (activeProjectId === id) {
+    if (ids.includes(activeProjectId)) {
       const nextActive = updated.find((p) => !p.archived);
       if (nextActive) setActiveProjectId(nextActive.id);
     }
   };
 
+  // Restore a Space. If its parent is still archived/gone, promote it to top level.
   const handleRestoreProject = (id: string) => {
     setUndoStack((prev) => [...prev, projects]);
     setRedoStack([]);
-    setProjects(projects.map((p) => (p.id === id ? { ...p, archived: false } : p)));
+    setProjects(
+      projects.map((p) => {
+        if (p.id !== id) return p;
+        const parent = p.parentId ? projects.find((q) => q.id === p.parentId) : undefined;
+        const orphaned = Boolean(p.parentId) && (!parent || parent.archived);
+        return { ...p, archived: false, parentId: orphaned ? undefined : p.parentId };
+      })
+    );
     setActiveProjectId(id);
   };
 
@@ -551,9 +596,9 @@ export default function App() {
                 onChange={(e) => handleSelectProject(e.target.value)}
                 className="bg-transparent text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white focus:outline-none cursor-pointer"
               >
-                {visibleProjects.map((proj) => (
+                {orderedVisibleSpaces.map(({ proj, depth }) => (
                   <option key={proj.id} value={proj.id} className="bg-slate-100 dark:bg-[#0B0D11] text-slate-700 dark:text-slate-300">
-                    {proj.icon || "📂"} {proj.name}
+                    {`${"  ".repeat(depth)}${depth > 0 ? "↳ " : ""}${proj.icon || "📂"} ${proj.name}`}
                   </option>
                 ))}
               </select>

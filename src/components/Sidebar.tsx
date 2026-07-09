@@ -21,13 +21,14 @@ import {
   Palette,
   Pencil,
   Star,
+  FolderPlus,
 } from "lucide-react";
 
 interface SidebarProps {
   projects: Project[];
   activeProjectId: string;
   onSelectProject: (id: string) => void;
-  onCreateProject: (name: string, desc: string) => void;
+  onCreateProject: (name: string, desc: string, parentId?: string) => void;
   onDeleteProject: (id: string) => void;
   onDuplicateProject?: (id: string) => void;
   onArchiveProject?: (id: string) => void;
@@ -62,6 +63,8 @@ export default function Sidebar({
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [createParentId, setCreateParentId] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
   // Favorites pinned to the top, otherwise original order (stable sort).
@@ -69,6 +72,36 @@ export default function Sidebar({
     .filter((p) => !p.archived)
     .sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)));
   const archivedProjects = projects.filter((p) => p.archived);
+
+  // Sub-space tree: a Space's effective parent is undefined if its parent is
+  // hidden/archived (so orphans render as roots).
+  const activeIds = new Set(activeProjects.map((p) => p.id));
+  const effParent = (p: Project) =>
+    p.parentId && activeIds.has(p.parentId) ? p.parentId : undefined;
+  const childrenOf = (pid: string | undefined) =>
+    activeProjects.filter((p) => effParent(p) === pid);
+  const rootSpaces = childrenOf(undefined);
+
+  const toggleCollapse = (id: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  const startCreateSubSpace = (id: string) => {
+    setCreateParentId(id);
+    setIsCreating(true);
+    setMenuOpenId(null);
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+  const createParentName = createParentId
+    ? projects.find((p) => p.id === createParentId)?.name
+    : null;
 
   const startRename = (id: string, currentName: string) => {
     setRenamingId(id);
@@ -97,10 +130,11 @@ export default function Sidebar({
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProjName.trim()) return;
-    onCreateProject(newProjName, newProjDesc);
+    onCreateProject(newProjName, newProjDesc, createParentId ?? undefined);
     setNewProjName("");
     setNewProjDesc("");
     setIsCreating(false);
+    setCreateParentId(null);
   };
 
   return (
@@ -166,7 +200,7 @@ export default function Sidebar({
           </button>
           <button
             id="add-project-btn-trigger"
-            onClick={() => setIsCreating(!isCreating)}
+            onClick={() => { setCreateParentId(null); setIsCreating(!isCreating); }}
             className="p-1 rounded text-slate-500 dark:text-slate-400 hover:bg-slate-800 hover:text-slate-700 dark:text-slate-300 transition-colors"
             title="Create Space"
           >
@@ -180,10 +214,16 @@ export default function Sidebar({
             onSubmit={handleCreate}
             className="bg-slate-50 dark:bg-[#1C1F26] p-3 rounded-lg mb-3 border border-slate-200 dark:border-slate-800"
           >
+            {createParentName && (
+              <div className="text-[10px] font-semibold text-indigo-500 dark:text-indigo-400 mb-2 flex items-center space-x-1">
+                <FolderPlus className="w-3 h-3" />
+                <span className="truncate">New sub-space under “{createParentName}”</span>
+              </div>
+            )}
             <input
               id="new-project-name-input"
               type="text"
-              placeholder="Space Name (e.g., SEO Plan)"
+              placeholder={createParentId ? "Sub-space name" : "Space Name (e.g., SEO Plan)"}
               value={newProjName}
               onChange={(e) => setNewProjName(e.target.value)}
               className="w-full bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 mb-2"
@@ -201,7 +241,7 @@ export default function Sidebar({
               <button
                 id="cancel-create-project"
                 type="button"
-                onClick={() => setIsCreating(false)}
+                onClick={() => { setIsCreating(false); setCreateParentId(null); }}
                 className="px-2.5 py-1 bg-slate-50 dark:bg-[#0F1115] hover:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded text-[10px] font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white cursor-pointer"
               >
                 Cancel
@@ -219,17 +259,31 @@ export default function Sidebar({
 
         {projectsExpanded && (
           <div id="projects-list" className="space-y-1">
-            {activeProjects.map((proj) => {
+            {rootSpaces.map(function renderNode(proj, _i, _arr, depth = 0): React.ReactNode {
               const isSelected = proj.id === activeProjectId;
               const isMenuOpen = menuOpenId === proj.id;
+              const kids = childrenOf(proj.id);
+              const isCollapsed = collapsed.has(proj.id);
               return (
+                <React.Fragment key={proj.id}>
                 <div
-                  key={proj.id}
                   id={`project-item-${proj.id}`}
+                  style={{ paddingLeft: depth * 14 }}
                   className={`group relative flex items-center justify-between rounded-lg transition-colors p-1 border ${
                     isSelected ? "bg-slate-50 dark:bg-[#1C1F26] border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white" : "border-transparent hover:bg-slate-50 dark:hover:bg-[#1C1F26]/40"
                   }`}
                 >
+                  {kids.length > 0 ? (
+                    <button
+                      onClick={() => toggleCollapse(proj.id)}
+                      className="p-0.5 rounded flex-shrink-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                      title={isCollapsed ? "Expand sub-spaces" : "Collapse sub-spaces"}
+                    >
+                      {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    </button>
+                  ) : (
+                    <span className="w-4 flex-shrink-0" />
+                  )}
                   {renamingId === proj.id ? (
                     <input
                       id={`rename-space-input-${proj.id}`}
@@ -341,6 +395,15 @@ export default function Sidebar({
                           <span>{proj.favorite ? "Remove from Favorites" : "Add to Favorites"}</span>
                         </button>
 
+                        <button
+                          id={`add-subspace-${proj.id}`}
+                          onClick={() => startCreateSubSpace(proj.id)}
+                          className="w-full px-3 py-1.5 flex items-center space-x-2 hover:bg-slate-50 dark:hover:bg-[#1C1F26] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                        >
+                          <FolderPlus className="w-3.5 h-3.5" />
+                          <span>Add Sub-Space</span>
+                        </button>
+
                         {onDuplicateProject && (
                           <button
                             id={`duplicate-space-${proj.id}`}
@@ -377,6 +440,8 @@ export default function Sidebar({
                     </>
                   )}
                 </div>
+                {kids.length > 0 && !isCollapsed && kids.map((k) => renderNode(k, 0, [], depth + 1))}
+                </React.Fragment>
               );
             })}
           </div>

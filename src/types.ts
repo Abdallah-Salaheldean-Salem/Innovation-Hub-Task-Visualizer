@@ -83,6 +83,7 @@ export interface Project {
   icon?: string;     // Space icon (emoji)
   archived?: boolean; // Hidden from active lists but retained
   favorite?: boolean; // Pinned to the top of the Spaces list
+  parentId?: string;  // Parent Space id (this Space is a sub-space)
 }
 
 export interface SuggestedAction {
