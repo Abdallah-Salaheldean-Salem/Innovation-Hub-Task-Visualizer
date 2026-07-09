@@ -200,8 +200,11 @@ export default function App() {
     localStorage.setItem("clickup_active_view", activeView);
   }, [activeView]);
 
-  // Active Project Selection (archived spaces are hidden from active use)
-  const visibleProjects = projects.filter((p) => !p.archived);
+  // Active Project Selection (archived spaces are hidden from active use;
+  // favorites are pinned to the top, original order preserved otherwise)
+  const visibleProjects = projects
+    .filter((p) => !p.archived)
+    .sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)));
   const activeProject =
     visibleProjects.find((p) => p.id === activeProjectId) ||
     visibleProjects[0] ||
@@ -302,8 +305,11 @@ export default function App() {
     setActiveProjectId(id);
   };
 
-  // Update a Space's color / icon
-  const handleUpdateSpaceMeta = (id: string, meta: { color?: string; icon?: string }) => {
+  // Update a Space's lightweight metadata (color / icon / name / favorite)
+  const handleUpdateSpaceMeta = (
+    id: string,
+    meta: { color?: string; icon?: string; name?: string; favorite?: boolean }
+  ) => {
     setProjects(projects.map((p) => (p.id === id ? { ...p, ...meta } : p)));
   };
 

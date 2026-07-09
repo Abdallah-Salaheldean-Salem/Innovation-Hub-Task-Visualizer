@@ -16,6 +16,7 @@ create table if not exists public.projects (
   color text,
   icon text,
   archived boolean not null default false,
+  favorite boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

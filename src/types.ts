@@ -82,6 +82,7 @@ export interface Project {
   color?: string;    // Space accent color (hex)
   icon?: string;     // Space icon (emoji)
   archived?: boolean; // Hidden from active lists but retained
+  favorite?: boolean; // Pinned to the top of the Spaces list
 }
 
 export interface SuggestedAction {

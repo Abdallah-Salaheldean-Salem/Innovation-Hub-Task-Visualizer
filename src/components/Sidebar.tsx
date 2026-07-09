@@ -19,6 +19,8 @@ import {
   Archive,
   ArchiveRestore,
   Palette,
+  Pencil,
+  Star,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -30,7 +32,7 @@ interface SidebarProps {
   onDuplicateProject?: (id: string) => void;
   onArchiveProject?: (id: string) => void;
   onRestoreProject?: (id: string) => void;
-  onUpdateSpaceMeta?: (id: string, meta: { color?: string; icon?: string }) => void;
+  onUpdateSpaceMeta?: (id: string, meta: { color?: string; icon?: string; name?: string; favorite?: boolean }) => void;
   spaceColors?: string[];
   spaceIcons?: string[];
   activeView: AppView;
@@ -58,10 +60,28 @@ export default function Sidebar({
   const [projectsExpanded, setProjectsExpanded] = useState(true);
   const [archivedExpanded, setArchivedExpanded] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
-  const activeProjects = projects.filter((p) => !p.archived);
+  // Favorites pinned to the top, otherwise original order (stable sort).
+  const activeProjects = projects
+    .filter((p) => !p.archived)
+    .sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)));
   const archivedProjects = projects.filter((p) => p.archived);
+
+  const startRename = (id: string, currentName: string) => {
+    setRenamingId(id);
+    setRenameValue(currentName);
+    setMenuOpenId(null);
+  };
+
+  const commitRename = () => {
+    if (renamingId && renameValue.trim()) {
+      onUpdateSpaceMeta?.(renamingId, { name: renameValue.trim() });
+    }
+    setRenamingId(null);
+  };
 
   const viewItems: { id: AppView; label: string; icon: any; badge?: string }[] = [
     { id: "list", label: "1. List View", icon: ListTodo },
@@ -210,21 +230,41 @@ export default function Sidebar({
                     isSelected ? "bg-slate-50 dark:bg-[#1C1F26] border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white" : "border-transparent hover:bg-slate-50 dark:hover:bg-[#1C1F26]/40"
                   }`}
                 >
-                  <button
-                    id={`select-project-${proj.id}`}
-                    onClick={() => onSelectProject(proj.id)}
-                    className="flex-1 min-w-0 text-left flex items-center space-x-2.5 px-2 py-1.5 text-xs font-medium rounded-md text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white cursor-pointer"
-                  >
-                    {proj.icon ? (
-                      <span className="w-3.5 text-center flex-shrink-0 text-[13px] leading-none">{proj.icon}</span>
-                    ) : (
-                      <FolderOpen
-                        className="w-3.5 h-3.5 flex-shrink-0"
-                        style={{ color: proj.color || undefined }}
-                      />
-                    )}
-                    <span className="truncate">{proj.name}</span>
-                  </button>
+                  {renamingId === proj.id ? (
+                    <input
+                      id={`rename-space-input-${proj.id}`}
+                      autoFocus
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onBlur={commitRename}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitRename();
+                        if (e.key === "Escape") setRenamingId(null);
+                      }}
+                      className="flex-1 min-w-0 mx-1 my-0.5 bg-white dark:bg-[#0F1115] border border-indigo-500 rounded px-2 py-1 text-xs text-slate-900 dark:text-white focus:outline-none"
+                    />
+                  ) : (
+                    <button
+                      id={`select-project-${proj.id}`}
+                      onClick={() => onSelectProject(proj.id)}
+                      onDoubleClick={() => startRename(proj.id, proj.name)}
+                      className="flex-1 min-w-0 text-left flex items-center space-x-2.5 px-2 py-1.5 text-xs font-medium rounded-md text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white cursor-pointer"
+                      title="Double-click to rename"
+                    >
+                      {proj.icon ? (
+                        <span className="w-3.5 text-center flex-shrink-0 text-[13px] leading-none">{proj.icon}</span>
+                      ) : (
+                        <FolderOpen
+                          className="w-3.5 h-3.5 flex-shrink-0"
+                          style={{ color: proj.color || undefined }}
+                        />
+                      )}
+                      <span className="truncate">{proj.name}</span>
+                      {proj.favorite && (
+                        <Star className="w-3 h-3 flex-shrink-0 text-amber-400 fill-amber-400" />
+                      )}
+                    </button>
+                  )}
 
                   <button
                     id={`space-menu-btn-${proj.id}`}
@@ -282,6 +322,24 @@ export default function Sidebar({
                         </div>
 
                         <div className="border-t border-slate-200 dark:border-slate-800 my-1" />
+
+                        <button
+                          id={`rename-space-${proj.id}`}
+                          onClick={() => startRename(proj.id, proj.name)}
+                          className="w-full px-3 py-1.5 flex items-center space-x-2 hover:bg-slate-50 dark:hover:bg-[#1C1F26] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          <span>Rename Space</span>
+                        </button>
+
+                        <button
+                          id={`favorite-space-${proj.id}`}
+                          onClick={() => { onUpdateSpaceMeta?.(proj.id, { favorite: !proj.favorite }); setMenuOpenId(null); }}
+                          className="w-full px-3 py-1.5 flex items-center space-x-2 hover:bg-slate-50 dark:hover:bg-[#1C1F26] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                        >
+                          <Star className={`w-3.5 h-3.5 ${proj.favorite ? "text-amber-400 fill-amber-400" : ""}`} />
+                          <span>{proj.favorite ? "Remove from Favorites" : "Add to Favorites"}</span>
+                        </button>
 
                         {onDuplicateProject && (
                           <button
