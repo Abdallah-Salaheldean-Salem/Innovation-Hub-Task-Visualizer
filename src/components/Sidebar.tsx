@@ -22,6 +22,7 @@ import {
   Pencil,
   Star,
   FolderPlus,
+  Boxes,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -122,9 +123,10 @@ export default function Sidebar({
     { id: "calendar", label: "3. Calendar Grid", icon: CalendarDays },
     { id: "team", label: "4. Team View", icon: Users },
     { id: "gantt", label: "5. Gantt Chart", icon: Calendar },
-    { id: "ideas", label: "6. Ideas & Priorities", icon: Lightbulb },
-    { id: "activity", label: "7. Activity Log", icon: Clock },
-    { id: "settings", label: "8. Settings View", icon: Settings },
+    { id: "modules", label: "6. Modules & Goals", icon: Boxes },
+    { id: "ideas", label: "7. Ideas & Priorities", icon: Lightbulb },
+    { id: "activity", label: "8. Activity Log", icon: Clock },
+    { id: "settings", label: "9. Settings View", icon: Settings },
   ];
 
   const handleCreate = (e: React.FormEvent) => {

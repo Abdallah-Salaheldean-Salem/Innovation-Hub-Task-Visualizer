@@ -11,6 +11,7 @@ import IdeasView from "./components/IdeasView";
 import ActivityView from "./components/ActivityView";
 import CalendarView from "./components/CalendarView";
 import SettingsView from "./components/SettingsView";
+import ModulesView from "./components/ModulesView";
 import TaskModal from "./components/TaskModal";
 import { 
   LayoutGrid, 
@@ -515,6 +516,7 @@ export default function App() {
     { value: "list" as AppView, label: "Spreadsheet", icon: "📋" },
     { value: "calendar" as AppView, label: "Calendar Grid", icon: "📅" },
     { value: "gantt" as AppView, label: "Gantt Chart", icon: "📈" },
+    { value: "modules" as AppView, label: "Modules & Goals", icon: "🧩" },
     { value: "team" as AppView, label: "Team View", icon: "👥" },
     { value: "ideas" as AppView, label: "Ideas & Priorities", icon: "💡" },
     { value: "settings" as AppView, label: "Settings", icon: "⚙️" },
@@ -953,6 +955,14 @@ export default function App() {
             <ActivityView
               project={activeProject}
               onUpdateProject={handleUpdateProject}
+            />
+          )}
+
+          {activeView === "modules" && (
+            <ModulesView
+              project={activeProject}
+              onUpdateProject={handleUpdateProject}
+              onOpenTaskModal={handleOpenTaskModal}
             />
           )}
 

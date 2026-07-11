@@ -1,4 +1,4 @@
-import { Project, IdeaItem } from "./types";
+import { Project, IdeaItem, ModuleReadiness } from "./types";
 
 export const INITIAL_PROJECTS: Project[] = [
   {
@@ -6,6 +6,36 @@ export const INITIAL_PROJECTS: Project[] = [
     name: "💻 Code of Innovation Hub",
     description: "Master workspace for tracking the design, electronics, fabrication, and smart systems of the Innovation Hub.",
     tags: ["Electronics", "Fabrication", "3D Printing", "Software", "Safety", "Admin"],
+    modules: [
+      { id: "mod-electronics", name: "Electronics", icon: "🔌", color: "#6366f1", owner: "Abdallah", readiness: "prototype" },
+      { id: "mod-fabrication", name: "Fabrication", icon: "🔨", color: "#f59e0b", owner: "Alice", readiness: "bench-test", dependsOn: ["mod-electronics"] },
+      { id: "mod-3dprinting", name: "3D Printing", icon: "🧱", color: "#06b6d4", owner: "Alice", readiness: "design" },
+      { id: "mod-software", name: "Software", icon: "💻", color: "#10b981", owner: "Abdallah", readiness: "prototype", dependsOn: ["mod-electronics"] },
+      { id: "mod-safety", name: "Safety", icon: "🛡️", color: "#f43f5e", owner: "Sallam", readiness: "integrated" },
+    ],
+    goals: [
+      {
+        id: "goal-demo",
+        title: "Deliver a working Innovation Hub demo build",
+        specific: "Integrate the electronics, firmware, and fabricated chassis into one demoable unit.",
+        measurable: "All 5 modules reach at least 'Integrated' readiness and 90% of tasks complete.",
+        achievable: "Current team of 3 with existing hardware; no new procurement required.",
+        relevant: "Needed for the end-of-term Innovation Hub showcase.",
+        timeBound: "2026-08-15",
+        progress: 40,
+      },
+      {
+        id: "goal-safety",
+        title: "Pass the lab safety audit",
+        specific: "Close all Safety-module tasks and document compliance for each workstation.",
+        measurable: "Zero open Safety tasks and a signed checklist per station.",
+        achievable: "Sallam owns Safety; most items are documentation.",
+        relevant: "Required before the lab can host external visitors.",
+        timeBound: "2026-07-31",
+        progress: 65,
+        moduleId: "mod-safety",
+      },
+    ],
     columns: [
       { id: "col-todo", title: "Not Started", color: "#64748b" },
       { id: "col-progress", title: "In Progress", color: "#3b82f6" },
@@ -887,6 +917,33 @@ export const INITIAL_PROJECTS: Project[] = [
   }
 ];
 
+// Seed classification: the imported tasks arrive untagged, so match each one to
+// a module by keywords in its title/description. This tags them with the module
+// name, which populates both the Modules view (via tag match) and the Tag view.
+// Users can override any assignment from the Modules view's reassign dropdown.
+const MODULE_KEYWORDS: { name: string; kws: string[] }[] = [
+  { name: "Safety", kws: ["safety", "audit", "complian", "standard", "supervis", "inspect", "protect", "chair"] },
+  { name: "3D Printing", kws: ["3d print", "3dp", "printer", "printing", "filament", "nozzle", "prusa", "g-code", "gcode", "layer height"] },
+  { name: "Electronics", kws: ["sensor", "circuit", "pcb", "wiring", "power", "battery", "electr", "voltage", "relay", "microcontroller", "esp", "arduino", "transceiver", "radio", "inverter", "motor", "coil", "pid", "controller", "data logger", "tesla", "ece", "robotino", "measurement", "thermal device", "monitoring"] },
+  { name: "Fabrication", kws: ["fabricat", "manfact", "manufact", "weld", "laser", "cnc", "assembly", "chassis", "mount", "frame", "cad", "machin", "workshop", "workbench", "router", "foam", "cutting", "shaker", "hpde"] },
+  { name: "Software", kws: ["dashboard", "firmware", "software", "api", "database", "script", "cloud", "automat", "email", "kpi", "form", "odoo", "gamification", "visualizer", "decision log", "linkedin", "content", "report", "system", "web-kit", "kit"] },
+];
+
+INITIAL_PROJECTS.forEach((p) => {
+  const modNames = new Set((p.modules || []).map((m) => m.name));
+  if (modNames.size === 0) return;
+  p.tasks.forEach((t) => {
+    if (t.tags && t.tags.length > 0) return;
+    const hay = (t.title + " " + (t.description || "")).toLowerCase();
+    for (const g of MODULE_KEYWORDS) {
+      if (modNames.has(g.name) && g.kws.some((k) => hay.includes(k))) {
+        t.tags = [g.name];
+        break;
+      }
+    }
+  });
+});
+
 export const TEAM_MEMBERS = [
   "Abdallah",
   "Sallam",
@@ -902,4 +959,13 @@ export const PRIORITIES: { value: "low" | "medium" | "high" | "urgent"; label: s
   { value: "medium", label: "Medium", color: "#3b82f6", bg: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
   { value: "high", label: "High", color: "#f59e0b", bg: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
   { value: "urgent", label: "Critical", color: "#f43f5e", bg: "bg-red-500/10 text-red-400 border-red-500/20" },
+];
+
+// Engineering readiness lifecycle for a module (subsystem)
+export const MODULE_READINESS: { value: ModuleReadiness; label: string; color: string }[] = [
+  { value: "design", label: "Design", color: "#64748b" },
+  { value: "prototype", label: "Prototype", color: "#6366f1" },
+  { value: "bench-test", label: "Bench-test", color: "#f59e0b" },
+  { value: "integrated", label: "Integrated", color: "#3b82f6" },
+  { value: "done", label: "Done", color: "#10b981" },
 ];

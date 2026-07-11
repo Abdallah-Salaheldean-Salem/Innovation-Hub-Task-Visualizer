@@ -33,6 +33,39 @@ export interface Task {
   dependencies?: string[]; // IDs of tasks that must be finished first
   isMilestone?: boolean;   // Diamond milestone flag
   progress?: number;       // Progress percentage (0 - 100)
+  moduleId?: string;       // Explicit module/subsystem assignment
+}
+
+// Hardware/engineering readiness lifecycle for a module (subsystem)
+export type ModuleReadiness =
+  | "design"
+  | "prototype"
+  | "bench-test"
+  | "integrated"
+  | "done";
+
+export interface ProjectModule {
+  id: string;
+  name: string;
+  color?: string;
+  icon?: string;
+  owner?: string;
+  readiness?: ModuleReadiness;
+  dependsOn?: string[]; // ids of modules this one depends on
+  description?: string;
+}
+
+// SMART goal-setting framework (Specific, Measurable, Achievable, Relevant, Time-bound)
+export interface SmartGoal {
+  id: string;
+  title: string;       // the goal statement
+  specific: string;    // S — precisely what will be accomplished
+  measurable: string;  // M — the metric / definition of done
+  achievable: string;  // A — resources and why it's realistic
+  relevant: string;    // R — why it matters
+  timeBound: string;   // T — target date (YYYY-MM-DD)
+  progress?: number;   // completion toward the goal (0 - 100)
+  moduleId?: string;   // optional link to a module
 }
 
 export interface IdeaItem {
@@ -84,6 +117,8 @@ export interface Project {
   archived?: boolean; // Hidden from active lists but retained
   favorite?: boolean; // Pinned to the top of the Spaces list
   parentId?: string;  // Parent Space id (this Space is a sub-space)
+  modules?: ProjectModule[]; // Subsystem breakdown
+  goals?: SmartGoal[];       // SMART goals
 }
 
 export interface SuggestedAction {
@@ -105,4 +140,4 @@ export interface GeneratedReport {
   createdAt: string;
 }
 
-export type AppView = "list" | "board" | "team" | "gantt" | "ideas" | "activity" | "settings" | "calendar";
+export type AppView = "list" | "board" | "team" | "gantt" | "ideas" | "activity" | "settings" | "calendar" | "modules";

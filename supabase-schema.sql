@@ -18,6 +18,8 @@ create table if not exists public.projects (
   archived boolean not null default false,
   favorite boolean not null default false,
   "parentId" text,
+  modules jsonb not null default '[]'::jsonb,
+  goals jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
