@@ -361,6 +361,16 @@ export default function Sidebar({
                             ))}
                           </div>
                           <div className="flex flex-wrap gap-1">
+                            <button
+                              type="button"
+                              onClick={() => onUpdateSpaceMeta?.(proj.id, { icon: "" })}
+                              className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 ${
+                                !proj.icon ? "bg-indigo-500/15 ring-1 ring-indigo-500/40" : "text-slate-400"
+                              }`}
+                              title="No Icon"
+                            >
+                              ✕
+                            </button>
                             {spaceIcons.map((icon) => (
                               <button
                                 key={icon}
@@ -417,21 +427,17 @@ export default function Sidebar({
                           </button>
                         )}
 
-                        {onArchiveProject && activeProjects.length > 1 && (
-                          <button
-                            id={`archive-space-${proj.id}`}
-                            onClick={() => { onArchiveProject(proj.id); setMenuOpenId(null); }}
-                            className="w-full px-3 py-1.5 flex items-center space-x-2 hover:bg-slate-50 dark:hover:bg-[#1C1F26] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
-                          >
-                            <Archive className="w-3.5 h-3.5" />
-                            <span>Archive Space</span>
-                          </button>
-                        )}
-
                         {projects.length > 1 && (
                           <button
                             id={`delete-project-${proj.id}`}
-                            onClick={() => { onDeleteProject(proj.id); setMenuOpenId(null); }}
+                            onClick={() => {
+                              if (onArchiveProject) {
+                                onArchiveProject(proj.id);
+                              } else {
+                                onDeleteProject(proj.id);
+                              }
+                              setMenuOpenId(null);
+                            }}
                             className="w-full px-3 py-1.5 flex items-center space-x-2 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-500 dark:text-rose-400 border-t border-slate-200 dark:border-slate-800 cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
