@@ -70,5 +70,5 @@ For a deeper understanding of the project's inner workings, deployment, and futu
 This project is licensed under the MIT License.
 
 **Maintainers:**
-- Abdallah Salaheldean (Innovation Lead) - abdallah.salaheldean@gmail.com
-- Sallam (Systems Engineer) - sallam.workspace@gmail.com
+- Abdallah Salaheldean (Innovation Hub Lead) - abdallah.salaheldean@gmail.com
+- Sallam (Innovation Hub Engineer ) - mohamedsallam899@gmail.com
