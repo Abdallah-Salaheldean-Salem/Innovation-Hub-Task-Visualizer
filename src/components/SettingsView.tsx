@@ -1,15 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { Project } from "../types";
-import { Settings, Info, Save, RotateCcw, Shield, ShieldCheck, Database, Sliders, Download, Smartphone, CheckCircle2, Share } from "lucide-react";
+import { Settings, Info, Save, RotateCcw, Shield, ShieldCheck, Database, Sliders, Download, Smartphone, CheckCircle2, Share, Lock, KeyRound, LogOut } from "lucide-react";
 import { INITIAL_PROJECTS } from "../data";
 
 interface SettingsViewProps {
   project: Project;
   onUpdateProject: (proj: Project) => void;
   onResetWorkspace: () => void;
+  isAdmin?: boolean;
+  spaceHasPassword?: boolean;
+  onSetSpacePassword?: () => void;
+  onAdminLogin?: () => void;
+  onLockAll?: () => void;
 }
 
-export default function SettingsView({ project, onUpdateProject, onResetWorkspace }: SettingsViewProps) {
+export default function SettingsView({
+  project,
+  onUpdateProject,
+  onResetWorkspace,
+  isAdmin,
+  spaceHasPassword,
+  onSetSpacePassword,
+  onAdminLogin,
+  onLockAll,
+}: SettingsViewProps) {
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description || "");
   const [isSaved, setIsSaved] = useState(false);
@@ -81,6 +95,76 @@ export default function SettingsView({ project, onUpdateProject, onResetWorkspac
         <span className="text-[10px] bg-indigo-500/10 border border-indigo-500/25 text-indigo-400 px-2 py-0.5 rounded font-semibold uppercase tracking-wide">
           Configuration Panel
         </span>
+      </div>
+
+      {/* Access & Security */}
+      <div id="settings-access-card" className="shrink-0 bg-white dark:bg-[#17191E] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-md">
+        <div className="p-4 bg-slate-50 dark:bg-[#1C1F26] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Lock className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wide uppercase">Access &amp; Security</h3>
+          </div>
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+              isAdmin
+                ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-600 dark:text-emerald-400"
+                : "bg-slate-200 dark:bg-[#0F1115] border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400"
+            }`}
+          >
+            {isAdmin ? "Admin unlocked" : "Standard access"}
+          </span>
+        </div>
+
+        <div className="p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+              <KeyRound className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+              <span>Password for “{project.name}”</span>
+              <span
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                  spaceHasPassword
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                }`}
+              >
+                {spaceHasPassword ? "Set" : "Not set"}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-1">
+              Members must enter this password to open and edit the space. The admin password overrides all spaces. Setting a password requires admin.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={onSetSpacePassword}
+              className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>{spaceHasPassword ? "Change password" : "Set password"}</span>
+            </button>
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={onLockAll}
+                title="Lock everything (sign out of admin and all unlocked spaces)"
+                className="px-3.5 py-2 bg-white dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1C2027] text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Lock all</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onAdminLogin}
+                className="px-3.5 py-2 bg-white dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1C2027] text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>Admin login</span>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
