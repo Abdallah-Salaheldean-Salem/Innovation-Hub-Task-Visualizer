@@ -79,6 +79,7 @@ export interface Project {
   ideas?: IdeaItem[];
   teams?: Team[];
   members?: TeamMember[];
+  password?: string; // Optional light-weight passcode gating access to this space
 }
 
 export interface SuggestedAction {

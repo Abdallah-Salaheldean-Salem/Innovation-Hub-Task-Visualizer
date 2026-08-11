@@ -10,6 +10,7 @@ import IdeasView from "./components/IdeasView";
 import ActivityView from "./components/ActivityView";
 import CalendarView from "./components/CalendarView";
 import SettingsView from "./components/SettingsView";
+import SpaceLockGate from "./components/SpaceLockGate";
 import TaskModal from "./components/TaskModal";
 import { fetchProjects, saveProject, deleteProjectRemote } from "./lib/supabase-sync";
 import {
@@ -52,6 +53,23 @@ export default function App() {
     const saved = localStorage.getItem("clickup_active_view");
     return (saved as AppView) || "activity"; // default to Daily Logs for high similarity on load
   });
+
+  // Spaces the visitor has unlocked this browser session (passcode gate).
+  const [unlockedSpaces, setUnlockedSpaces] = useState<Set<string>>(() => {
+    try {
+      return new Set<string>(JSON.parse(sessionStorage.getItem("unlocked_spaces") || "[]"));
+    } catch {
+      return new Set<string>();
+    }
+  });
+  const unlockSpace = (id: string) => {
+    setUnlockedSpaces((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      sessionStorage.setItem("unlocked_spaces", JSON.stringify([...next]));
+      return next;
+    });
+  };
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -132,6 +150,7 @@ export default function App() {
 
   // Active Project Selection
   const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
+  const spaceLocked = !!activeProject?.password && !unlockedSpaces.has(activeProject.id);
 
   const handleSelectProject = (id: string) => {
     setActiveProjectId(id);
@@ -661,6 +680,10 @@ export default function App() {
 
         {/* 5. ACTIVE DYNAMIC STAGE CONTAINER */}
         <div id="workspace-dynamic-view-container" className="flex-1 overflow-hidden bg-slate-50 dark:bg-[#0F1115]">
+          {spaceLocked ? (
+            <SpaceLockGate space={activeProject} onUnlock={() => unlockSpace(activeProject.id)} />
+          ) : (
+          <>
           {activeView === "list" && (
             <ListView
               project={activeProject}
@@ -731,6 +754,8 @@ export default function App() {
               onUpdateProject={handleUpdateProject}
               onResetWorkspace={handleResetWorkspace}
             />
+          )}
+          </>
           )}
         </div>
 
