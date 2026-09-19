@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Project, Task, BoardColumn, TaskPriority } from "../types";
 import { PRIORITIES } from "../data";
 import { checkDoneGate } from "../lib/checklist";
+import { isDeadlineMissed } from "../lib/scheduling";
 import {
   Plus,
   MoreHorizontal,
@@ -947,6 +948,15 @@ export default function KanbanBoard({
                               <span className="flex items-center space-x-0.5">
                                 <CheckSquare className="w-3 h-3" />
                                 <span>{subtasksCompleted}/{totalSubtasks}</span>
+                              </span>
+                            )}
+                            {isDeadlineMissed(task) && (
+                              <span
+                                title={`Past deadline ${task.deadline}`}
+                                className="flex items-center space-x-0.5 text-rose-500 font-bold"
+                              >
+                                <AlertTriangle className="w-3 h-3" />
+                                <span>Late</span>
                               </span>
                             )}
                           </div>
