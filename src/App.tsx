@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Project, Task, AppView } from "./types";
+import { Project, Task, AppView, ChecklistTemplate } from "./types";
 import { INITIAL_PROJECTS } from "./data";
 import { fetchProjects, saveProjectsBulk, deleteProjectRemote, stableStringify } from "./lib/supabase-sync";
 import Sidebar from "./components/Sidebar";
@@ -16,6 +16,9 @@ import TaskModal from "./components/TaskModal";
 import AccessModal, { AccessModalMode } from "./components/AccessModal";
 import { fetchAppState, saveAppState } from "./lib/supabase-sync";
 import { spawnNextOccurrence, shouldSpawnOnMove } from "./lib/recurrence";
+import { seedMissingTemplates } from "./lib/checklist";
+
+type ChecklistTemplateMap = Record<string, ChecklistTemplate[]>;
 import {
   loadAccess,
   persistAccess,
@@ -153,6 +156,54 @@ export default function App() {
         setSpaceSecurity(map);
       }
     }
+  };
+
+  // --- Checklist templates (shared per-space, stored in app_state) ---
+  const [checklistTemplates, setChecklistTemplates] = useState<ChecklistTemplateMap>({});
+  const checklistTemplatesRef = useRef<ChecklistTemplateMap>({});
+  const [templatesLoaded, setTemplatesLoaded] = useState(false);
+
+  const persistTemplates = (map: ChecklistTemplateMap) => {
+    checklistTemplatesRef.current = map;
+    setChecklistTemplates(map);
+    saveAppState("checklist_templates", map);
+  };
+
+  // Load the shared checklist-template map on start.
+  useEffect(() => {
+    fetchAppState("checklist_templates")
+      .then((res) => {
+        if (res.ok && res.value && typeof res.value === "object") {
+          const map = res.value as ChecklistTemplateMap;
+          checklistTemplatesRef.current = map;
+          setChecklistTemplates(map);
+        }
+      })
+      .finally(() => setTemplatesLoaded(true));
+  }, []);
+
+  // Seed starter templates into any space that has never been seeded. A space
+  // that exists in the map (even as an empty list) is left untouched, so a user
+  // who clears the starters won't have them reappear.
+  useEffect(() => {
+    if (!templatesLoaded) return;
+    const next = seedMissingTemplates(checklistTemplatesRef.current, projects.map((p) => p.id));
+    if (next) persistTemplates(next);
+  }, [templatesLoaded, projects]);
+
+  const handleSaveChecklistTemplate = (projectId: string, name: string, items: string[]) => {
+    const current = checklistTemplatesRef.current;
+    const list = current[projectId] || [];
+    persistTemplates({
+      ...current,
+      [projectId]: [...list, { id: `tpl-${Date.now()}`, name, items }],
+    });
+  };
+
+  const handleDeleteChecklistTemplate = (projectId: string, id: string) => {
+    const current = checklistTemplatesRef.current;
+    const list = current[projectId] || [];
+    persistTemplates({ ...current, [projectId]: list.filter((t) => t.id !== id) });
   };
 
   const grantAdmin = () => {
@@ -1409,22 +1460,9 @@ export default function App() {
           projectTags={activeProject.tags}
           projectMembers={["Unassigned", ...(activeProject.members?.map(m => m.name).filter(n => n !== "Unassigned") || ["Abdallah", "Sallam", "Alice", "Bob", "Charlie", "Diana"])]}
           allTasks={activeProject.tasks}
-          checklistTemplates={activeProject.checklistTemplates || []}
-          onSaveTemplate={(name, items) =>
-            handleUpdateProject({
-              ...activeProject,
-              checklistTemplates: [
-                ...(activeProject.checklistTemplates || []),
-                { id: `tpl-${Date.now()}`, name, items },
-              ],
-            })
-          }
-          onDeleteTemplate={(id) =>
-            handleUpdateProject({
-              ...activeProject,
-              checklistTemplates: (activeProject.checklistTemplates || []).filter((t) => t.id !== id),
-            })
-          }
+          checklistTemplates={checklistTemplates[activeProjectId] || []}
+          onSaveTemplate={(name, items) => handleSaveChecklistTemplate(activeProjectId, name, items)}
+          onDeleteTemplate={(id) => handleDeleteChecklistTemplate(activeProjectId, id)}
           onClose={() => {
             setIsTaskModalOpen(false);
             setDefaultDates(undefined);

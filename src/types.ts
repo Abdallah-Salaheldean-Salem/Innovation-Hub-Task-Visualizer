@@ -153,7 +153,6 @@ export interface Project {
   parentId?: string;  // Parent Space id (this Space is a sub-space)
   modules?: ProjectModule[]; // Subsystem breakdown
   goals?: SmartGoal[];       // SMART goals
-  checklistTemplates?: ChecklistTemplate[]; // Reusable checklists appliable to tasks
 }
 
 export interface SuggestedAction {
