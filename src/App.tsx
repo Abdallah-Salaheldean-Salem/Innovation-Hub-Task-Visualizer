@@ -15,6 +15,7 @@ import ModulesView from "./components/ModulesView";
 import TaskModal from "./components/TaskModal";
 import AccessModal, { AccessModalMode } from "./components/AccessModal";
 import { fetchAppState, saveAppState } from "./lib/supabase-sync";
+import { spawnNextOccurrence, shouldSpawnOnMove } from "./lib/recurrence";
 import {
   loadAccess,
   persistAccess,
@@ -591,6 +592,7 @@ export default function App() {
 
     if (taskData.id) {
       // Update existing task
+      const oldTask = activeProject.tasks.find((t) => t.id === taskData.id);
       updatedTasks = activeProject.tasks.map((t) => {
         if (t.id === taskData.id) {
           return {
@@ -600,6 +602,17 @@ export default function App() {
         }
         return t;
       });
+      // Recurring task completed via the modal's status change → spawn next.
+      const mergedTask = updatedTasks.find((t) => t.id === taskData.id);
+      const targetCol = activeProject.columns.find((c) => c.id === mergedTask?.status);
+      if (
+        mergedTask &&
+        oldTask &&
+        shouldSpawnOnMove(mergedTask, oldTask.status, targetCol, activeProject.columns)
+      ) {
+        const next = spawnNextOccurrence(mergedTask, activeProject.columns);
+        if (next) updatedTasks = [...updatedTasks, next];
+      }
     } else {
       // Create new task
       const newTask: Task = {

@@ -16,6 +16,15 @@ export interface SubTask {
   completed: boolean;
 }
 
+export type RecurrenceFrequency = "daily" | "weekly" | "monthly";
+
+// When a recurring task is completed, the app spawns the next occurrence with
+// its dates advanced by `interval` periods of `frequency`.
+export interface Recurrence {
+  frequency: RecurrenceFrequency;
+  interval: number; // every N days / weeks / months (>= 1)
+}
+
 export interface TaskComment {
   id: string;
   author: string;
@@ -54,6 +63,7 @@ export interface Task {
   deadline?: string;       // YYYY-MM-DD — hard target finish, distinct from dueDate; flagged if missed
   constraintType?: ConstraintType; // scheduling constraint kind
   constraintDate?: string; // YYYY-MM-DD paired with constraintType
+  recurrence?: Recurrence; // if set, completing the task spawns the next occurrence
 }
 
 // Hardware/engineering readiness lifecycle for a module (subsystem)
